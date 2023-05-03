@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 valid_operators = ["+", "-", "*", "/"]
 
-path = "http://localhost:5000/calculator?num1=2&num2=3&operator=%2B"
+path = "http://127.0.0.1:5000/calculator?num1=2&num2=3&operator=%2B"
 
 def solve(num1, num2, operator):
     """Returns the result of the operation between num1 and num2.
