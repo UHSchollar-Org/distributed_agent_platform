@@ -1,5 +1,4 @@
 
-import APIs.api_example
 import threading
 from Pyro5.api import Daemon, Proxy, expose, oneway
 import contextlib
@@ -74,9 +73,10 @@ class Client(object):
                             if len(temp) == 3:
                                 response = self.agent_plat.comunicate_with_api(
                                     temp[1], temp[2])
-                            elif len(temp >= 3):
+                            elif len(temp) > 3:
                                 response = self.agent_plat.comunicate_with_api(
                                     temp[1], temp[2], temp[3])
+                                print("------___------")
                             print(response)
                         if temp[0] == '3':
                             response = self.agent_plat.get_apis()

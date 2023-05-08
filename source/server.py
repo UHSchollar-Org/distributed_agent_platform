@@ -1,4 +1,3 @@
-from typing import List
 from Pyro5.api import Daemon, locate_ns
 import Pyro5
 import json
@@ -69,9 +68,11 @@ if __name__ == '__main__':
 
 def delete_json_info():
     data = {}
-    with open('datos.json', 'w') as archivo:
+    with open('Data/datos.json', 'w') as archivo:
         json.dump(data, archivo)
 
+
+# delete_json_info()
 # a = AgentPlataform()
 # print(a.get_apis())
 # res = a.comunicate_with_api('Hola', 'hola')

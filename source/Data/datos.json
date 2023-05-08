@@ -1,1 +1,1 @@
-{"Hola": [["Hola"], ["hola"], ["[]"], ["http://127.0.0.1:8000"], ["\"Dice hola\""]]}
+{"Hola": [["Hola"], ["hola"], ["[]"], ["http://127.0.0.1:8000"], ["\"Dice hola\""]], "ApiCalculator": [["ApiCalculator"], ["add"], ["[x,y]"], ["http://127.0.0.1:8000/add/{x}/{y}"], ["\"Suma dos numeros\""]]}
