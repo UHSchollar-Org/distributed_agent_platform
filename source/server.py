@@ -46,9 +46,28 @@ class AgentPlataform(object):
                 return {-1: "No se encontro el endopint"}
             else:
                 website = data[api_name]
-                response = requests.get(website[3][0])
-                json_data = response.json()
+                print(website)
+                url = website[3][0]
+                if params != None:
+                    url = self._create_params_url(website[3][0], params)
+                    print(url)
+                response = requests.get(
+                    url)
+                if response.status_code == 200:
+                    # La solicitud fue exitosa
+                    json_data = response.json()
+                    print(json_data)
+                else:
+                    # La solicitud no fue exitosa
+                    print('La solicitud falló con el código de estado:',
+                          response.status_code)
+                    return -1, None
                 return 1, (json_data)
+
+    def _create_params_url(self, website, args):
+        args_ = args[1:len(args) - 1].split(sep=',')
+        url = website + '/'.join(str(arg) for arg in args_)
+        return url
 
 
 def main():

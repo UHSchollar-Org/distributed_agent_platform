@@ -74,10 +74,17 @@ class Client(object):
                                 response = self.agent_plat.comunicate_with_api(
                                     temp[1], temp[2])
                             elif len(temp) > 3:
+                                # Los parametros hay q pasarlos como una lista
+                                # params_list = []
+                                # parms = temp[3][1:len(temp[3]) - 1]
+                                # for x in parms.split(sep=','):
+                                #     params_list.append(x)
+                                # print(params_list)
                                 response = self.agent_plat.comunicate_with_api(
                                     temp[1], temp[2], temp[3])
-                                print("------___------")
-                            print(response)
+                                if response[0] == -1:
+                                    print("Error !")
+                            print(response[1])
                         if temp[0] == '3':
                             response = self.agent_plat.get_apis()
                             self.print_apis(response)

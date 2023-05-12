@@ -36,8 +36,8 @@ class CalculatorApi(object):
         Calculadora que recibe dos numros y devulve la suma estos
         '''
 
-# example : ApiCalculator add [x,y] http://127.0.0.1:8000/add/{x}/{y} "Suma dos numeros"
-# Hola hola [] http://127.0.0.1:8000 "Dice hola"
+# example : ApiCalculator add [x,y] http://127.0.0.1:8002/add "Suma dos numeros"
+# Hola hola [] http://127.0.0.1:8001 "Dice hola"
 # uvicorn api_example:app --reload levantar server
 # http://127.0.0.1:8000
 

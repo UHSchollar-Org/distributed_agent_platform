@@ -1,12 +1,15 @@
+# main.py
+
 from fastapi import FastAPI
 
 app = FastAPI()
 
 
-class CalculatorApi(object):
+class Calculator_api(object):
     @app.get("/add/{x}/{y}")
     async def add(x, y):
-        return {"result": int(x) + int(y)}
+        result = int(x) + int(y)
+        return {"result": result}
 
     def get_url(self):
         return '/add'
