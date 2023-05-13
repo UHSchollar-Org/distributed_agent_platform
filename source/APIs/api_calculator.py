@@ -11,6 +11,11 @@ class Calculator_api(object):
         result = int(x) + int(y)
         return {"result": result}
 
+    @app.get("/sub/{x}/{y}")
+    async def sub(x, y):
+        result = int(x) - int(y)
+        return {"result": result}
+
     def get_url(self):
         return '/add'
 
@@ -21,3 +26,4 @@ class Calculator_api(object):
         return '''
         Calculadora que recibe dos numros y devulve la suma estos
         '''
+# example : ApiCalculator add [x,y] http://127.0.0.1:8002/add "Suma dos numeros"
