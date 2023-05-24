@@ -48,7 +48,3 @@ class CalculatorApi(object):
 
 
 # 2 Hola hola
-
-
-# levantar el servidor de nombres
-# pyro5-ns
