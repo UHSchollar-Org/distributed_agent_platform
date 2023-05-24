@@ -12,25 +12,25 @@ class Client(object):
 
     def give_welcome(self):
         return """
-        Le damos la bienvenida a la plataforma de agentes, un sitio
-        donde podrá poner APIs al servicio de otros usuarios y podrá
-        usar APIs de terceros.
         Por favor escriba 'help' para ver las funcionalidades que se brindan.
         """
 
     def get_funcionality(self):
         print("""
-        Para ingresar una nueva API al servidor escriba:
-        1: nombre de la api y separado por espacios
+        Para ingresar una nuevo API al servidor escriba:
+        1 nombre de la api y separado por espacios
         el nombre del enpoint, [parametros separados por coma], el endpoint y la descricion, luego el signo '-' y asi sucesivamente
         ejemplo -> 1: ApiCalculator add [x,y] http://127.0.0.1:8000/add/{x}/{y} "Suma dos numeros"'
 
         Para escribir usar una API del servidor escriba:
-        '2: Nombre de la API Nombre del endpoint [param1,param2,...]'
+        '2 Nombre de la API Nombre del endpoint [param1,param2,...]'
         ejemplo -> 2: ApiCalulator add [4,5]
 
         Para chequear que APIs hay en el servidor escriba:
         '3'
+
+        Para actualizar alguna de sus APIs escriba:
+        '4'
         """)
 
     def print_apis(self, respose):

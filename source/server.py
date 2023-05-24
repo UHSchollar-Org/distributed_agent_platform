@@ -90,6 +90,41 @@ class AgentPlataform(object):
                 json.dump(data, archivo)
             return id, {1: f"id: {id} asociado a la api: {api}"}
 
+    def update_api(self, id, api_name, endpoint, updated_api):
+        # TODO testing
+        # formato de cada api
+        # nombre de la api[0], nombre del endopint, [params], direccion http, descripcion
+        with open("Data/user_api_description.json", "r") as archivo:
+            data = json.load(archivo)
+        if id not in data.keys():
+            return -1, "Invalid ID"
+        with open("Data/apis.json", "r") as archivo:
+            data_ = json.load(archivo)
+        if api_name not in data_.keys():
+            return -1, "Nombre de api invalido"
+        index = 0
+        for i, api in enumerate(data[api_name]):
+            if api[1] == endpoint:
+                index = i
+                break
+        data[api_name][index] = updated_api
+        return 1, "Api udpated succefuly"
+
+    def delete_api(self, id):
+        # TODO testing
+        with open("Data/user_api_description.json", "r") as archivo:
+            data = json.load(archivo)
+        if id not in data.keys():
+            return -1, "Invalid ID"
+        else:
+            tmp = data[id]
+            api_name = tmp[0]
+            data.pop(id)
+            with open("Data/apis.json", "r") as archivo:
+                data_ = json.load(archivo)
+            data_.pop(api_name)
+            return 1, "Succefuly deleted!"
+
     def generate_id(self):
         unique_id = uuid.uuid4()
         return str(unique_id)
