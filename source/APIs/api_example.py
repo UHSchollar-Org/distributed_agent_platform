@@ -6,7 +6,7 @@ app = FastAPI()
 
 
 class Hello_api(object):
-    @app.get("/")
+    @app.get("/hola/")
     async def hello():
         return {"message": "hello"}
 
@@ -26,18 +26,19 @@ class CalculatorApi(object):
         return {"result": int(x) + int(y)}
 
     def get_url(self):
-        return '/add'
+        return "/add"
 
     def name(self):
-        return 'Calculator'
+        return "Calculator"
 
     def get_description(self):
-        return '''
+        return """
         Calculadora que recibe dos numros y devulve la suma estos
-        '''
+        """
 
-# example : ApiCalculator add [x,y] http://127.0.0.1:8002/add "Suma dos numeros"
-# Hola hola [] http://127.0.0.1:8001 "Dice hola"
+
+# ApiCalculator add [x,y] http://127.0.0.1:8002/add/ "Suma dos numeros" - ApiCalculator sub [x,y] http://127.0.0.1:8002/sub/ "Resta dos numeros"
+# Hola hola [] http://127.0.0.1:8001/hola/ "Dice hola"
 # uvicorn api_example:app --reload levantar server
 # http://127.0.0.1:8000
 
