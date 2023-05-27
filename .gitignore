@@ -1,1 +1,6 @@
 source/APIs/__pycache__/api_example.cpython-39.pyc
+source/Server/__pycache__/Aux_.cpython-310.pyc
+source/Server/__pycache__/Data_store.cpython-310.pyc
+source/Server/__pycache__/Finger_table.cpython-310.pyc
+source/Server/__pycache__/RequestHandler.cpython-310.pyc
+source/Server/__pycache__/server.cpython-310.pyc
