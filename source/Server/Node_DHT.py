@@ -22,7 +22,7 @@ class NodeInfo:
         self.port = port
 
     def __str__(self):
-        return self.ip + "|" + str(self.port)
+        return f'{self.ip}|{str(self.port)}'
 
 
 # The class Node is used to manage the each node that, it contains all the information about the node like ip, port,
@@ -188,7 +188,7 @@ class Node:
         # print("Succ found for inserting key" , id_of_key , succ)
         ip, port = self.get_ip_port(succ)
         api_id = self.request_handler.send_message(
-            ip, port, "insert_server|" + str(key) + ":" + str(value)
+            ip, port, f"insert_server|{str(key)}:{str(value)}"
         )
         print(api_id)
         return (
@@ -220,7 +220,7 @@ class Node:
         deleted_api = self.agnt_plat_server.delete_api(id_api[0])
         print(deleted_api)
         if deleted_api:
-            self.request_handler.send_message(ip, port, "delete_server|" + str(key))
+            self.request_handler.send_message(ip, port, f"delete_server|{str(key)}")
             return (
                 "Deleted at node id "
                 + str(Node(ip, port).id)
@@ -242,7 +242,7 @@ class Node:
         succ = self.find_successor(id_of_key)
         # print("Succ found for searching key" , id_of_key , succ)
         ip, port = self.get_ip_port(succ)
-        data = self.request_handler.send_message(ip, port, "search_server|" + str(key))
+        data = self.request_handler.send_message(ip, port, f"search_server|{str(key)}")
         return data
 
     def join_request_from_other_node(self, node_id):
@@ -253,7 +253,7 @@ class Node:
         # this function is responsible to join any new nodes to the chord ring ,it finds out the successor and the predecessor of the
         # new incoming node in the ring and then it sends a send_keys request to its successor to recieve all the keys
         # smaller than its id from its successor.
-        data = "join_request|" + str(self.id)
+        data = f"join_request|{str(self.id)}"
         succ = self.request_handler.send_message(node_ip, node_port, data)
         ip, port = self.get_ip_port(succ)
         self.successor = Node(ip, port)
@@ -262,7 +262,7 @@ class Node:
 
         if self.successor.id != self.id:
             data = self.request_handler.send_message(
-                self.successor.ip, self.successor.port, "send_keys|" + str(self.id)
+                self.successor.ip, self.successor.port, f"send_keys|{str(self.id)}"
             )
             # print("data recieved" , data)
             for key_value in data.split(":"):
@@ -292,7 +292,7 @@ class Node:
             if ip == self.ip and port == self.port:
                 return self.nodeinfo.__str__()
             data = self.request_handler.send_message(
-                ip, port, "find_predecessor|" + str(search_id)
+                ip, port, f"find_predecessor|{str(search_id)}"
             )
             return data
 
@@ -342,7 +342,7 @@ class Node:
             if self.get_forward_distance_2nodes(
                 key_id, id_of_joining_node
             ) < self.get_forward_distance_2nodes(key_id, self.id):
-                data += str(keys) + "|" + str(self.data_store.data[keys]) + ":"
+                data += f'{str(keys)}|{str(self.data_store.data[keys])}:'
                 keys_to_be_removed.append(keys)
         for keys in keys_to_be_removed:
             self.data_store.data.pop(keys)
@@ -367,7 +367,7 @@ class Node:
                 self.request_handler.send_message(
                     self.successor.ip,
                     self.successor.port,
-                    "notify|" + str(self.id) + "|" + self.nodeinfo.__str__(),
+                    f"notify|{str(self.id)}|{self.nodeinfo.__str__()}",
                 )
                 continue
 
@@ -383,7 +383,7 @@ class Node:
             self.request_handler.send_message(
                 self.successor.ip,
                 self.successor.port,
-                "notify|" + str(self.id) + "|" + self.nodeinfo.__str__(),
+                f"notify|{str(self.id)}|{self.nodeinfo.__str__()}",
             )
             print("===============================================")
             print("STABILIZING")
