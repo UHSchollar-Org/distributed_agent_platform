@@ -5,32 +5,14 @@ import hashlib
 import random
 import sys
 from copy import deepcopy
-from agent_pla import server
-import Aux_
+import server
+import Aux_ as Aux_
+import Data_store as ds
+import Finger_table as ft
+import RequestHandler as rq
 
 m = 7
 # The class DataStore is used to store the key value pairs at each node
-
-
-class DataStore:
-    def __init__(self):
-        self.data = {}
-
-    def insert(self, key, value):
-        self.data[key] = value
-
-    def delete(self, key):
-        del self.data[key]
-
-    def search(self, search_key):
-        # print('Search key', search_key)
-
-        if search_key in self.data:
-            return self.data[search_key]
-        else:
-            # print('Not found')
-            print(self.data)
-            return None
 
 
 # Class represents the actual Node, it stores ip and port of a node
@@ -54,9 +36,9 @@ class Node:
         # print(self.id)
         self.predecessor = None
         self.successor = None
-        self.finger_table = FingerTable(self.id)
-        self.data_store = DataStore()
-        self.request_handler = RequestHandler()
+        self.finger_table = ft.FingerTable(self.id)
+        self.data_store = ds.DataStore()
+        self.request_handler = rq.RequestHandler()
         self.agnt_plat_server = server.AgentPlataform()
 
     def hash(self, message):
@@ -88,7 +70,8 @@ class Node:
         if operation == "delete_server":
             # print('deleting in my datastore', str(self.nodeinfo))
             data = message.split("|")[1]
-            self.data_store.data.pop(data)
+            data_ = data.split(":")[1]
+            self.data_store.data.pop(data_)
             result = "Deleted"
 
         if operation == "search_server":
@@ -224,7 +207,7 @@ class Node:
             + "########################################################################"
         )
 
-    def delete_key(self, key):
+    def delete_key(self, key):  # la llave es un string q tiene id : key
         # The function to handle the incoming key_value pair deletion request from the client this function searches for the
         # correct node on which the key_value pair is stored and then sends a message to that node to delete the key_val
         # pair in its data_store.
@@ -232,15 +215,24 @@ class Node:
         succ = self.find_successor(id_of_key)
         # print("Succ found for deleting key" , id_of_key , succ)
         ip, port = self.get_ip_port(succ)
-        self.request_handler.send_message(ip, port, "delete_server|" + str(key))
-        return (
-            "deleted at node id "
-            + str(Node(ip, port).id)
-            + " key was "
-            + str(key)
-            + " key hash was "
-            + str(id_of_key)
-        )
+        id_api = key.split(":")
+        print(id_api[0])
+        deleted_api = self.agnt_plat_server.delete_api(id_api[0])
+        print(deleted_api)
+        if deleted_api:
+            self.request_handler.send_message(ip, port, "delete_server|" + str(key))
+            return (
+                "Deleted at node id "
+                + str(Node(ip, port).id)
+                + " key was "
+                + str(key)
+                + " key hash was "
+                + str(id_of_key)
+            )
+        else:
+            return (
+                "Error, invalid ID"  # aqui quizas el error no sea siempre id invalido
+            )
 
     def search_key(self, key):
         # The function to handle the incoming key_value pair search request from the client this function searches for the
@@ -506,59 +498,6 @@ class Node:
 
     def get_forward_distance_2nodes(self, node2, node1):
         return pow(2, m) - self.get_backward_distance_2nodes(node2, node1)
-
-
-# The class FingerTable is responsible for managing the finger table of each node.
-class FingerTable:
-    # The __init__ fucntion is used to initialize the table with values when
-    # a new node joins the ring.
-    def __init__(self, my_id):
-        self.table = []
-        for i in range(m):
-            x = pow(2, i)
-            entry = (my_id + x) % pow(2, m)
-            node = None
-            self.table.append([entry, node])
-
-    def print(self):
-        # The print function is used to print the finger table of a node.
-        for index, entry in enumerate(self.table):
-            if entry[1] is None:
-                print(
-                    "Entry: ",
-                    index,
-                    " Interval start: ",
-                    entry[0],
-                    " Successor: ",
-                    "None",
-                )
-            else:
-                print(
-                    "Entry: ",
-                    index,
-                    " Interval start: ",
-                    entry[0],
-                    " Successor: ",
-                    entry[1].id,
-                )
-
-
-# The class RequestHandler is used to manage all the requests for sending messages from one node to another
-# the send_message function takes as the ip, port of the reciever and the message to be sent as the arguments and
-# then sends the message to the desired node.
-class RequestHandler:
-    def __init__(self):
-        pass
-
-    def send_message(self, ip, port, message):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        # connect to server on local computer
-        s.connect((ip, port))
-        s.send(message.encode("utf-8"))
-        data = s.recv(1024)
-        s.close()
-        return data.decode("utf-8")
 
 
 # The ip = "127.0.0.1" signifies that the node is executing on the localhost

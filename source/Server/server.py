@@ -1,12 +1,8 @@
-from Pyro5.api import Daemon, locate_ns
-import Pyro5
 import json
 import requests
 import uuid
 
 
-@Pyro5.api.expose
-@Pyro5.api.behavior(instance_mode="single")
 class AgentPlataform(object):
     def __init__(self) -> None:
         # {'api_name': [nombre_endopint,args,endpoint, description]}
@@ -113,15 +109,20 @@ class AgentPlataform(object):
         with open("Data/user_api_description.json", "r") as archivo:
             data = json.load(archivo)
         if id not in data.keys():
-            return -1, "Invalid ID"
+            return False
         else:
-            tmp = data[id]
-            api_name = tmp[0]
-            data.pop(id)
-            with open("Data/apis.json", "r") as archivo:
+            with open("Data/user_api_description.json", "r") as archivo:
                 data_ = json.load(archivo)
-            data_.pop(api_name)
-            return 1, "Succefuly deleted!"
+            api_name = data_[id][0]
+            data_.pop(id)
+            with open("Data/user_api_description.json", "w") as archivo:
+                json.dump(data_, archivo)
+            with open("Data/apis.json", "r") as archivo:
+                data = json.load(archivo)
+                data.pop(api_name)
+            with open("Data/apis.json", "w") as archivo:
+                json.dump(data, archivo)
+            return True
 
     def generate_id(self):
         unique_id = uuid.uuid4()
@@ -142,17 +143,7 @@ class AgentPlataform(object):
 # if __name__ == '__main__':
 #     main()
 
-# si se corre este metodo se eliminan todas las apis de la plataforma
-
-
-# def delete_json_info():
-#     data = {}
-#     with open('Data/apis.json', 'w') as archivo:
-#         json.dump(data, archivo)
-
-
 # delete_json_info()
 # a = AgentPlataform()
-# print(a.get_apis())
-# res = a.comunicate_with_api('Hola', 'hola')
-# print(res)
+# print(a.delete_api("71d59b1f-b3b1-4507-b2b7-605ceff02f42"))
+#
