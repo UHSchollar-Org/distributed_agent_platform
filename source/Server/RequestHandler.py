@@ -17,3 +17,13 @@ class RequestHandler:
         data = s.recv(1024)
         s.close()
         return data.decode("utf-8")
+    
+    def ping(self, ip, port):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((ip, port))
+            s.sendall('\r\n'.encode('utf-8'))
+            s.close()
+            return True
+        except socket.error:
+            return False
