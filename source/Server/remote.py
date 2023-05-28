@@ -1,9 +1,9 @@
 import json
 import socket
 import threading
-
+import hashlib
 from address import Address
-from settings import SIZE
+from settings import SIZE, LOGSIZE
 from network import *
 
 
@@ -42,7 +42,9 @@ class Remote(object):
         return "Remote %s" % self.address_
 
     def id(self, offset=0):
-        return (self.address_.__hash__() + offset) % SIZE
+        id = hashlib.sha256(self.address_.__str__().encode()).hexdigest()
+        id = int(id, 16)%pow(2,LOGSIZE)
+        return (id + offset) % SIZE
 
     def send(self, msg):
         # yo anhadi lo del encode

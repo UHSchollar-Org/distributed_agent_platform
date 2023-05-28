@@ -5,6 +5,7 @@ import socket
 import threading
 import random
 import time
+import hashlib
 
 from address import Address, inrange
 from remote import Remote
@@ -143,6 +144,30 @@ class Local(object):
         # We notify our new successor about us
         self.successor().notify(self)
         # Keep calling us
+        
+        print("===============================================")
+        print("STABILIZING")
+        print("===============================================")
+        print("ID: ", self.id())
+        
+        if len(self.successors_) > 0:
+            print("Successors ID: ", [x.id() for x in self.successors_])
+        
+        if self.predecessor_:
+            print("Predecessor ID: ", self.predecessor_.id())
+        
+        print("===============================================")
+        print("=============== FINGER TABLE ==================")
+        print(self.finger_)
+        print("===============================================")
+        print("DATA STORE")
+        print("===============================================")
+        print("NOT IMPLEMENTED YET")
+        print("===============================================")
+        print("+++++++++++++++ END +++++++++++++++++++++++++++")
+        print()
+        print()
+        print()
         return True
 
     def notify(self, remote):
@@ -187,7 +212,9 @@ class Local(object):
         return [(node.address_.ip, node.address_.port) for node in self.successors_[:N_SUCCESSORS - 1]]
 
     def id(self, offset=0):
-        return (self.address_.__hash__() + offset) % SIZE
+        id = hashlib.sha256(self.address_.__str__().encode()).hexdigest()
+        id = int(id, 16)%pow(2,LOGSIZE)
+        return (id + offset) % SIZE
 
     def successor(self):
         # We make sure to return an existing successor, there `might`
@@ -308,10 +335,26 @@ class Local(object):
 
 if __name__ == "__main__":
     import sys
+    ip = '127.0.0.1'
 
+    if len(sys.argv) == 3:
+        print("JOINING RING")
+
+        node = Local(Address(ip, sys.argv[1]), Address(ip, sys.argv[2]))
+        node.start()
+    
+    if len(sys.argv) == 2:
+        print('CREATING RING')
+        node = Local(Address(ip, sys.argv[1]))
+
+        node.predecessor_ = node
+        node.successors_ = [node] * N_SUCCESSORS
+        node.start()
+
+    """old things 
     if len(sys.argv) == 2:
         local = Local(Address("127.0.0.1", sys.argv[1]))
     else:
         local = Local(Address("127.0.0.1", sys.argv[1]), Address(
             "127.0.0.1", sys.argv[2]))
-    local.start()
+    local.start() """
