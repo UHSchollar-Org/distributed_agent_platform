@@ -4,3 +4,7 @@ source/Server/__pycache__/Data_store.cpython-310.pyc
 source/Server/__pycache__/Finger_table.cpython-310.pyc
 source/Server/__pycache__/RequestHandler.cpython-310.pyc
 source/Server/__pycache__/server.cpython-310.pyc
+source/Server/__pycache__/address.cpython-310.pyc
+source/Server/__pycache__/network.cpython-310.pyc
+source/Server/__pycache__/remote.cpython-310.pyc
+source/Server/__pycache__/settings.cpython-310.pyc
