@@ -5,12 +5,13 @@ import socket
 import threading
 import random
 import time
-import hashlib
 
+from utils import hash
 from address import Address, inrange
 from remote import Remote
 from settings import *
 from network import *
+from data_store import DataStore
 
 
 def repeat_and_sleep(sleep_time):
@@ -76,7 +77,31 @@ class Local(object):
         self.daemons_ = {}
         # initially no commands
         self.command_ = []
+        self.data_store = DataStore()
 
+    def insert_key(self, key, value):
+        key_id = hash(str(key))
+        succ = self.find_successor(key_id)
+        ip = succ.address_.ip
+        port = succ.address_.port
+        api_id = send_and_listen(succ.socket_, f'INSERT_SERVER {str(key)}:{str(value)}')
+        
+        return (
+            "Inserted at node id "
+            + str(succ.id())
+            + " key was "
+            + str(key)
+            + " key hash was "
+            + str(key_id)
+            + "\n"
+            + "########################################################################"
+            + "\n"
+            + "The ID associated with your API is "
+            + f"{api_id.split(':')[1]}"
+            + "\n"
+            + "########################################################################"
+        )
+    
     # is this id within our range?
     def is_ours(self, id):
         assert id >= 0 and id < SIZE
@@ -212,8 +237,7 @@ class Local(object):
         return [(node.address_.ip, node.address_.port) for node in self.successors_[:N_SUCCESSORS - 1]]
 
     def id(self, offset=0):
-        id = hashlib.sha256(self.address_.__str__().encode()).hexdigest()
-        id = int(id, 16)%pow(2,LOGSIZE)
+        id = hash(self.address_.__str__())
         return (id + offset) % SIZE
 
     def successor(self):
@@ -311,6 +335,12 @@ class Local(object):
             if command == 'get_successors':
                 result = json.dumps(self.get_successors())
 
+            if command == 'INSERT_KEY':
+                data = request.split()[1].split(':', maxsplit=1)
+                key = data[0]
+                value = data[1]
+                result = self.insert_key(key, value)
+            
             # or it could be a user specified operation
             for t in self.command_:
                 if command == t[0]:

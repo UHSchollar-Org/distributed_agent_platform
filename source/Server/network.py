@@ -21,3 +21,8 @@ def send_to_socket(s, msg):
     tmp = msg + "\r\n"
     msg_ncode = tmp.encode('utf-8')
     s.sendall(msg_ncode)
+
+def send_and_listen(s, msg):
+    s.send((msg + '\r\n').encode('utf-8'))
+    data = s.recv(1024)
+    return data.decode('utf-8')

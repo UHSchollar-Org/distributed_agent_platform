@@ -11,7 +11,7 @@ N_SUCCESSORS = 4
 # RET = retry limit
 
 # Stabilize
-STABILIZE_INT = 1
+STABILIZE_INT = 6
 STABILIZE_RET = 4
 
 # Fix Fingers

@@ -24,7 +24,7 @@ def main():
         if choice == "1":
             key = input("ENTER THE KEY: ")
             val = input("ENTER THE VALUE: ")
-            message = "insert|" + str(key) + ":" + str(val)
+            message = "INSERT_KEY" + str(key) + ":" + str(val)
             send_and_close(choice, message, sock)
 
         elif choice == "2":

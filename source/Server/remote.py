@@ -5,6 +5,7 @@ import hashlib
 from address import Address
 from settings import SIZE, LOGSIZE
 from network import *
+from utils import hash
 
 
 # decorator to thread-safe Remote's socket
@@ -42,10 +43,9 @@ class Remote(object):
         return "Remote %s" % self.address_
 
     def id(self, offset=0):
-        id = hashlib.sha256(self.address_.__str__().encode()).hexdigest()
-        id = int(id, 16)%pow(2,LOGSIZE)
+        id = hash(self.address_.__str__())
         return (id + offset) % SIZE
-
+        
     def send(self, msg):
         # yo anhadi lo del encode
         tmp = msg + "\r\n"
