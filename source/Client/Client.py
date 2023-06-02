@@ -1,11 +1,22 @@
 import socket
+from utils import get_ip_port
 
 
-def main():
-    # ip = input("Give the ip address of a node")
-    ip = "127.0.0.1"
-    # port = 9000
-    port = int(input("Give the port number of a node: "))
+def send_and_close(choice, message, socket: socket):
+    socket.send(message.encode("utf-8"))
+    data = socket.recv(1024)
+    data = str(data.decode("utf-8"))
+    if choice == "1" or choice == "3" or choice == "4":
+        print(data)
+    if choice == 2:
+        print("The value corresponding to the key is : ", data)
+    socket.close()
+
+
+def console():
+    ip, port = get_ip_port()
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     while True:
         print("************************MENU*************************")
@@ -16,20 +27,20 @@ def main():
         print("4. TO USE AGENT *************************************")
         print("5. TO EXIT ******************************************")
         print("*****************************************************")
-        choice = input()
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+        choice = input()
+        print("Estableciendo conexion: ", ip, port)
         sock.connect((ip, port))
 
         if choice == "1":
             key = input("ENTER THE KEY: ")
             val = input("ENTER THE VALUE: ")
-            message = "INSERT_KEY" + str(key) + ":" + str(val)
+            message = "SET_AGENT|" + str(key) + ":" + str(val) + "\r\n"
             send_and_close(choice, message, sock)
 
         elif choice == "2":
             key = input("ENTER THE KEY: ")
-            message = "search|" + str(key)
+            message = "SEARCH_KEY|" + str(key) + "\r\n"
             send_and_close(choice, message, sock)
 
         elif choice == "3":
@@ -52,15 +63,8 @@ def main():
             print("INCORRECT CHOICE")
 
 
-def send_and_close(choice, message, socket: socket):
-    socket.send(message.encode("utf-8"))
-    data = socket.recv(1024)
-    data = str(data.decode("utf-8"))
-    if choice == "1" or choice == "3" or choice == "4":
-        print(data)
-    if choice == 2:
-        print("The value corresponding to the key is : ", data)
-    socket.close()
+def main():
+    console()
 
 
 if __name__ == "__main__":
