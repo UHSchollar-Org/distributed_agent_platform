@@ -1,6 +1,4 @@
 #!/bin/python
-from audioop import add
-from lib2to3.pgen2.token import EQUAL
 import sys
 import json
 import socket
@@ -8,7 +6,6 @@ import threading
 import random
 import time
 import hashlib
-import Aux_
 
 from address import Address, inrange
 from remote import Remote
