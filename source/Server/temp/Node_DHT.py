@@ -7,9 +7,6 @@ import sys
 from copy import deepcopy
 import server
 import Aux_ as Aux_
-import Data_store as ds
-import Finger_table as ft
-import RequestHandler as rq
 
 m = 7
 # The class DataStore is used to store the key value pairs at each node
@@ -22,7 +19,7 @@ class NodeInfo:
         self.port = port
 
     def __str__(self):
-        return f'{self.ip}|{str(self.port)}'
+        return f"{self.ip}|{str(self.port)}"
 
 
 # The class Node is used to manage the each node that, it contains all the information about the node like ip, port,
@@ -342,7 +339,7 @@ class Node:
             if self.get_forward_distance_2nodes(
                 key_id, id_of_joining_node
             ) < self.get_forward_distance_2nodes(key_id, self.id):
-                data += f'{str(keys)}|{str(self.data_store.data[keys])}:'
+                data += f"{str(keys)}|{str(self.data_store.data[keys])}:"
                 keys_to_be_removed.append(keys)
         for keys in keys_to_be_removed:
             self.data_store.data.pop(keys)

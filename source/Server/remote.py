@@ -9,7 +9,7 @@ from network import *
 
 # decorator to thread-safe Remote's socket
 def requires_connection(func):
-    """ initiates and cleans up connections with remote server """
+    """initiates and cleans up connections with remote server"""
 
     def inner(self, *args, **kwargs):
         self.mutex_.acquire()
@@ -43,13 +43,13 @@ class Remote(object):
 
     def id(self, offset=0):
         id = hashlib.sha256(self.address_.__str__().encode()).hexdigest()
-        id = int(id, 16)%pow(2,LOGSIZE)
+        id = int(id, 16) % pow(2, LOGSIZE)
         return (id + offset) % SIZE
 
     def send(self, msg):
         # yo anhadi lo del encode
         tmp = msg + "\r\n"
-        mesg_encode = tmp.encode('utf-8')
+        mesg_encode = tmp.encode("utf-8")
         self.socket_.sendall(mesg_encode)
         self.last_msg_send_ = msg
 
@@ -64,7 +64,7 @@ class Remote(object):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect((self.address_.ip, self.address_.port))
-            s.sendall("\r\n".encode('utf-8'))
+            s.sendall("\r\n".encode("utf-8"))
             s.close()
             return True
         except socket.error:
@@ -78,7 +78,7 @@ class Remote(object):
 
     @requires_connection
     def get_successors(self):
-        self.send('get_successors')
+        self.send("get_successors")
 
         response = self.recv()
         # if our next guy doesn't have successors, return empty list
@@ -89,14 +89,14 @@ class Remote(object):
 
     @requires_connection
     def successor(self):
-        self.send('get_successor')
+        self.send("get_successor")
 
         response = json.loads(self.recv())
         return Remote(Address(response[0], response[1]))
 
     @requires_connection
     def predecessor(self):
-        self.send('get_predecessor')
+        self.send("get_predecessor")
 
         response = self.recv()
         if response == "":
@@ -106,18 +106,18 @@ class Remote(object):
 
     @requires_connection
     def find_successor(self, id):
-        self.send('find_successor %s' % id)
+        self.send("find_successor %s" % id)
 
         response = json.loads(self.recv())
         return Remote(Address(response[0], response[1]))
 
     @requires_connection
     def closest_preceding_finger(self, id):
-        self.send('closest_preceding_finger %s' % id)
+        self.send("closest_preceding_finger %s" % id)
 
         response = json.loads(self.recv())
         return Remote(Address(response[0], response[1]))
 
     @requires_connection
     def notify(self, node):
-        self.send('notify %s %s' % (node.address_.ip, node.address_.port))
+        self.send("notify %s %s" % (node.address_.ip, node.address_.port))

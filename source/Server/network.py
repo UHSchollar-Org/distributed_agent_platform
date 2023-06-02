@@ -1,3 +1,6 @@
+import socket
+
+
 # reads from socket until "\r\n"
 def read_from_socket(socket):
     # yo anhadi lo del decode
@@ -5,7 +8,7 @@ def read_from_socket(socket):
     result = ""
     while 1:
         data = socket.recv(256)
-        data_decode = data.decode('utf-8')
+        data_decode = data.decode("utf-8")
         if data_decode[-2:] == "\r\n":
             result += data_decode[:-2]
             break
@@ -19,5 +22,18 @@ def read_from_socket(socket):
 def send_to_socket(s, msg):
     # print "respond : %s" % msg
     tmp = msg + "\r\n"
-    msg_ncode = tmp.encode('utf-8')
+    print(msg)
+    msg_ncode = tmp.encode("utf-8")
     s.sendall(msg_ncode)
+
+
+def send_message(ip, port, message):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # connect to server on local computer
+    s.connect((ip, port))
+    s.send(message.encode("utf-8"))
+    data = s.recv(1024)
+    print(data)
+    s.close()
+    return data.decode("utf-8")

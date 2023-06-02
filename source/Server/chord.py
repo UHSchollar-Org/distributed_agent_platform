@@ -1,4 +1,6 @@
 #!/bin/python
+from audioop import add
+from lib2to3.pgen2.token import EQUAL
 import sys
 import json
 import socket
@@ -6,11 +8,14 @@ import threading
 import random
 import time
 import hashlib
+import Aux_
 
 from address import Address, inrange
 from remote import Remote
 from settings import *
 from network import *
+from utils import *
+from server import AgentPlataform
 
 
 def repeat_and_sleep(sleep_time):
@@ -39,11 +44,10 @@ def retry_on_socket_error(retry_limit):
                     return ret
                 except socket.error:
                     # exp retry time
-                    time.sleep(2 ** retry_count)
+                    time.sleep(2**retry_count)
                     retry_count += 1
             if retry_count == retry_limit:
-                print("Retry count limit reached, aborting.. (%s)" %
-                      func.__name__)
+                print("Retry count limit reached, aborting.. (%s)" % func.__name__)
                 self.shutdown_ = True
                 sys.exit(-1)
 
@@ -65,17 +69,22 @@ class Daemon(threading.Thread):
 
 class Local(object):
     def __init__(self, local_address, remote_address=None):
-        self.address_ = local_address
+        new_local = Address(local_address.ip, local_address.port + 1)
+        self.address_ = new_local
         print("self id = %s" % self.id())
+        if remote_address != None:
+            print(f"Local: {self.address_.port}, Remote: {remote_address.port}")
         self.shutdown_ = False
         # list of successors
         self.successors_ = []
         # join the DHT
-        self.join(remote_address)
+        self.join(remote_address)  # TODO problemas con el join
         # we don't have deamons until we start
         self.daemons_ = {}
         # initially no commands
         self.command_ = []
+        # plataforma agente
+        self.agnt_plat_server = AgentPlataform()
 
     # is this id within our range?
     def is_ours(self, id):
@@ -89,17 +98,17 @@ class Local(object):
 
     # logging function
     def log(self, info):
-        """ f = open("tmp//chord.log", "a+")
+        """f = open("tmp//chord.log", "a+")
         f.write(str(self.id()) + " : " + info + "\n")
         f.close()
-        # print str(self.id()) + " : " +  info """
+        # print str(self.id()) + " : " +  info"""
 
     def start(self):
         # start the daemons
-        self.daemons_['run'] = Daemon(self, 'run')
-        self.daemons_['fix_fingers'] = Daemon(self, 'fix_fingers')
-        self.daemons_['stabilize'] = Daemon(self, 'stabilize')
-        self.daemons_['update_successors'] = Daemon(self, 'update_successors')
+        self.daemons_["run"] = Daemon(self, "run")
+        self.daemons_["fix_fingers"] = Daemon(self, "fix_fingers")
+        self.daemons_["stabilize"] = Daemon(self, "stabilize")
+        self.daemons_["update_successors"] = Daemon(self, "update_successors")
         for key in self.daemons_:
             self.daemons_[key].start()
 
@@ -136,31 +145,32 @@ class Local(object):
         if suc.id() != self.finger_[0].id():
             self.finger_[0] = suc
         x = suc.predecessor()
-        if x != None and \
-                inrange(x.id(), self.id(1), suc.id()) and \
-        self.id(1) != suc.id() and \
-                x.ping():
+        if (
+            x != None
+            and inrange(x.id(), self.id(1), suc.id())
+            and self.id(1) != suc.id()
+            and x.ping()
+        ):
             self.finger_[0] = x
         # We notify our new successor about us
         self.successor().notify(self)
         # Keep calling us
-        
+
         print("===============================================")
         print("STABILIZING")
         print("===============================================")
         print("ID: ", self.id())
-        
+
         if len(self.successors_) > 0:
             print("Successors ID: ", [x.id() for x in self.successors_])
-        
+
         if self.predecessor_:
             print("Predecessor ID: ", self.predecessor_.id())
-        
+
         print("===============================================")
         print("=============== FINGER TABLE ==================")
         print(self.finger_)
         print("===============================================")
-        print("DATA STORE")
         print("===============================================")
         print("NOT IMPLEMENTED YET")
         print("===============================================")
@@ -178,9 +188,11 @@ class Local(object):
         # OR
         # - our previous predecessor is dead
         self.log("notify")
-        if self.predecessor() == None or \
-                inrange(remote.id(), self.predecessor().id(1), self.id()) or \
-                not self.predecessor().ping():
+        if (
+            self.predecessor() == None
+            or inrange(remote.id(), self.predecessor().id(1), self.id())
+            or not self.predecessor().ping()
+        ):
             self.predecessor_ = remote
 
     @repeat_and_sleep(FIX_FINGERS_INT)
@@ -209,11 +221,14 @@ class Local(object):
 
     def get_successors(self):
         self.log("get_successors")
-        return [(node.address_.ip, node.address_.port) for node in self.successors_[:N_SUCCESSORS - 1]]
+        return [
+            (node.address_.ip, node.address_.port)
+            for node in self.successors_[: N_SUCCESSORS - 1]
+        ]
 
     def id(self, offset=0):
         id = hashlib.sha256(self.address_.__str__().encode()).hexdigest()
-        id = int(id, 16)%pow(2,LOGSIZE)
+        id = int(id, 16) % pow(2, LOGSIZE)
         return (id + offset) % SIZE
 
     def successor(self):
@@ -237,8 +252,7 @@ class Local(object):
         # - we have a pred(n)
         # - id is in (pred(n), n]
         self.log("find_successor")
-        if self.predecessor() and \
-                inrange(id, self.predecessor().id(1), self.id(1)):
+        if self.predecessor() and inrange(id, self.predecessor().id(1), self.id(1)):
             return self
         node = self.find_predecessor(id)
         return node.successor()
@@ -259,7 +273,11 @@ class Local(object):
         # increasing distance.
         self.log("closest_preceding_finger")
         for remote in reversed(self.successors_ + self.finger_):
-            if remote != None and inrange(remote.id(), self.id(1), id) and remote.ping():
+            if (
+                remote != None
+                and inrange(remote.id(), self.id(1), id)
+                and remote.ping()
+            ):
                 return remote
         return self
 
@@ -269,7 +287,7 @@ class Local(object):
         self.socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket_.bind((self.address_.ip, int(self.address_.port)))
         self.socket_.listen(10)
-
+        print("Escuchando en el puerto: ", self.address_.port)
         while 1:
             self.log("run loop")
             try:
@@ -277,39 +295,68 @@ class Local(object):
             except socket.error:
                 self.shutdown_ = True
                 break
-
             request = read_from_socket(conn)
-            command = request.split(' ')[0]
-
+            command = request.split(" ")[0]
             # we take the command out
-            request = request[len(command) + 1:]
+            request = request[len(command) + 1 :]
 
             # defaul : "" = not respond anything
             result = json.dumps("")
-            if command == 'get_successor':
+            if command == "get_successor":
                 successor = self.successor()
-                result = json.dumps(
-                    (successor.address_.ip, successor.address_.port))
-            if command == 'get_predecessor':
+                result = json.dumps((successor.address_.ip, successor.address_.port))
+            if command == "get_predecessor":
                 # we can only reply if we have a predecessor
                 if self.predecessor_ != None:
                     predecessor = self.predecessor_
                     result = json.dumps(
-                        (predecessor.address_.ip, predecessor.address_.port))
-            if command == 'find_successor':
+                        (predecessor.address_.ip, predecessor.address_.port)
+                    )
+            if command == "find_successor":
                 successor = self.find_successor(int(request))
-                result = json.dumps(
-                    (successor.address_.ip, successor.address_.port))
-            if command == 'closest_preceding_finger':
+                result = json.dumps((successor.address_.ip, successor.address_.port))
+            if command == "closest_preceding_finger":
                 closest = self.closest_preceding_finger(int(request))
-                result = json.dumps(
-                    (closest.address_.ip, closest.address_.port))
-            if command == 'notify':
-                npredecessor = Address(request.split(
-                    ' ')[0], int(request.split(' ')[1]))
+                result = json.dumps((closest.address_.ip, closest.address_.port))
+            if command == "notify":
+                npredecessor = Address(
+                    request.split(" ")[0], int(request.split(" ")[1])
+                )
                 self.notify(Remote(npredecessor))
-            if command == 'get_successors':
+            if command == "get_successors":
                 result = json.dumps(self.get_successors())
+
+            # if command == "SEARCH_KEY":
+            #     print("Seaching...")
+            #     data = request
+            #     result = self.search_key(data)
+
+            # if command == "SEARCH_SERVER":
+            #     print("searching in my datastore", str(self.nodeinfo))
+            #     data = request.split("|")[1]
+            #     if data in self.data_store.data:
+            #         return self.data_store.data[data]
+            #     else:
+            #         return "NOT FOUND"
+
+            # if command == "INSERT":
+            #     # print("finding hop to insert the key" , str(self.nodeinfo) )
+            #     data = request.split(":", maxsplit=1)
+            #     key = data[0]
+            #     value = data[1]
+            #     result = self.insert_key(key, value)
+
+            # if command == "INSERT_SERVER":
+            #     # print('Inserting in my datastore', str(self.nodeinfo))
+            #     data = request.split("|")[1].split(":", maxsplit=1)
+            #     key = data[0]
+            #     value = data[1]
+            #     args_ = Aux_.split_params(value)
+            #     self.data_store.insert(key, value)
+            #     self.agnt_plat_server.register_api(key, args_)
+            #     api_id = self.agnt_plat_server.asociate_id_api(key)
+            #     #!Aqui es donde se llama al metodo de almacenar la api
+            #     result = f"Inserted : {str(api_id)}"
 
             # or it could be a user specified operation
             for t in self.command_:
@@ -319,7 +366,7 @@ class Local(object):
             send_to_socket(conn, result)
             conn.close()
 
-            if command == 'shutdown':
+            if command == "shutdown":
                 self.socket_.close()
                 self.shutdown_ = True
                 self.log("shutdown started")
@@ -332,19 +379,80 @@ class Local(object):
     def unregister_command(self, cmd):
         self.commands_ = [t for t in self.commands_ if t[0] != cmd]
 
+    # def search_key(self, key):
+    #     # The function to handle the incoming key_value pair search request from the client this function searches for the
+    #     # correct node on which the key_value pair is stored and then sends a message to that node to return the value
+    #     # corresponding to that key.
+    #     id_of_key = hash(str(key))
+    #     succ = self.find_successor(id_of_key)
+    #     ip = succ.address_.ip
+    #     port = succ.address_.port
+    #     print(
+    #         "Succ found for searching key",
+    #         id_of_key,
+    #         succ.address_.ip,
+    #         succ.address_.port,
+    #     )
+    #     remote = Remote(succ.address_)
+    #     remote.open_connection()
+    #     data = send_to_socket(remote.socket_, f"SEARCH_SERVER|{key}")
+    #     print("NUEVA TECNICA")
+    #     print(data)
+    #     return data
+    #     data = send_to_socket(succ.socket_, f"SEARCH_SERVER|{key}")  #! esto sta mal
+
+    # def insert_key(self, key, value):
+    #     # The function to handle the incoming key_value pair insertion request from the client this function searches for the
+    #     # correct node on which the key_value pair needs to be stored and then sends a message to that node to store the
+    #     # key_val pair in its data_store
+    #     id_of_key = hash(str(key))
+    #     succ = self.find_successor(id_of_key)
+    #     # print("Succ found for inserting key" , id_of_key , succ)
+    #     ip = succ.address_.ip
+    #     port = succ.address_.port
+    #     if str(ip) == str(succ.address_.ip) and str(port) == str(succ.address_.port):
+    #         args_ = Aux_.split_params(value)
+    #         self.data_store.insert(key, value)
+    #         self.agnt_plat_server.register_api(key, args_)
+    #         api_id = self.agnt_plat_server.asociate_id_api(key)
+    #         #!Aqui es donde se llama al metodo de almacenar la api
+    #         result = f"Inserted : {str(api_id)}"
+    #     else:
+    #         api_id = send_message(
+    #             ip, port, "INSERT_SERVER|" + str(key) + ":" + str(value)
+    #         )
+    #         print("Entre al else")
+    #     print(api_id)
+    #     return (
+    #         "Inserted at node id "
+    #         + str(self.id())
+    #         + " key was "
+    #         + str(key)
+    #         + " key hash was "
+    #         + str(id_of_key)
+    #         + "\n"
+    #         + "########################################################################"
+    #         + "\n"
+    #         + "The ID associated with your API is "
+    #         + f"{api_id}"
+    #         + "\n"
+    #         + "########################################################################"
+    #     )
+
 
 if __name__ == "__main__":
     import sys
-    ip = '127.0.0.1'
+
+    ip = "127.0.0.1"
 
     if len(sys.argv) == 3:
         print("JOINING RING")
 
         node = Local(Address(ip, sys.argv[1]), Address(ip, sys.argv[2]))
         node.start()
-    
+
     if len(sys.argv) == 2:
-        print('CREATING RING')
+        print("CREATING RING")
         node = Local(Address(ip, sys.argv[1]))
 
         node.predecessor_ = node
