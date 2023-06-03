@@ -20,9 +20,8 @@ def read_from_socket(socket):
 
 # sends all on socket, adding "\r\n"
 def send_to_socket(s, msg):
-    # print "respond : %s" % msg
+    #  "respond : %s" % msg
     tmp = msg + "\r\n"
-    print(msg)
     msg_ncode = tmp.encode("utf-8")
     s.sendall(msg_ncode)
 
@@ -34,6 +33,5 @@ def send_message(ip, port, message):
     s.connect((ip, port))
     s.send(message.encode("utf-8"))
     data = s.recv(1024)
-    print(data)
     s.close()
     return data.decode("utf-8")

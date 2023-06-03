@@ -6,11 +6,12 @@ def send_and_close(choice, message, socket: socket):
     socket.send(message.encode("utf-8"))
     data = socket.recv(1024)
     data = str(data.decode("utf-8"))
+    print(data)
     if choice == "1" or choice == "3" or choice == "4":
         print(data)
     if choice == 2:
         print("The value corresponding to the key is : ", data)
-    socket.close()
+    # socket.close()
 
 
 def console():
@@ -22,7 +23,7 @@ def console():
         print("************************MENU*************************")
         print("PRESS ***********************************************")
         print("1. TO ENTER AGENT ***********************************")
-        print("2. TO SHOW AGENTS ***********************************")
+        print("2. TO SHOW AGENT ************************************")
         print("3. TO DELETE ****************************************")
         print("4. TO USE AGENT *************************************")
         print("5. TO EXIT ******************************************")
@@ -30,6 +31,7 @@ def console():
 
         choice = input()
         print("Estableciendo conexion: ", ip, port)
+        print(sock)
         sock.connect((ip, port))
 
         if choice == "1":
@@ -40,7 +42,7 @@ def console():
 
         elif choice == "2":
             key = input("ENTER THE KEY: ")
-            message = "SEARCH_KEY|" + str(key) + "\r\n"
+            message = "GET_AGENT|" + str(key) + "\r\n"
             send_and_close(choice, message, sock)
 
         elif choice == "3":

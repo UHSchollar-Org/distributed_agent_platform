@@ -82,6 +82,8 @@ class Local(object):
         self.command_ = []
         # plataforma agente
         self.agnt_plat_server = AgentPlataform()
+        # data
+        self.data_ = {}
 
     # is this id within our range?
     def is_ours(self, id):
@@ -106,6 +108,7 @@ class Local(object):
         self.daemons_["fix_fingers"] = Daemon(self, "fix_fingers")
         self.daemons_["stabilize"] = Daemon(self, "stabilize")
         self.daemons_["update_successors"] = Daemon(self, "update_successors")
+        self.daemons_["distribute_data"] = Daemon(self, "distribute_data")
         for key in self.daemons_:
             self.daemons_[key].start()
 
@@ -169,7 +172,8 @@ class Local(object):
         print(self.finger_)
         print("===============================================")
         print("===============================================")
-        print("NOT IMPLEMENTED YET")
+        print("=============== DATA STORE ====================")
+        print(str(self.data_))
         print("===============================================")
         print("+++++++++++++++ END +++++++++++++++++++++++++++")
         print()
@@ -376,6 +380,26 @@ class Local(object):
     def unregister_command(self, cmd):
         self.commands_ = [t for t in self.commands_ if t[0] != cmd]
 
+    def set_agent(self, id: str, key: str, value: str):
+        succ = self.find_successor(id)
+        return succ._set(json.dumps({"key": key, "value": value}))
+
+    def get_agent(self, id: str, api_name: str):
+        succ = self.find_predecessor(id)
+        return succ._get(json.dumps({"key": api_name}))
+
+    def use_agent(self, api_name, endpoint, params):
+        pass
+
+    def show_agents(self):
+        pass
+
+    def delete_agent(self, id_api: str):
+        pass
+
+    def get_agent_functionality(self, descripcion: str):
+        pass
+
     # def search_key(self, key):
     #     # The function to handle the incoming key_value pair search request from the client this function searches for the
     #     # correct node on which the key_value pair is stored and then sends a message to that node to return the value
@@ -435,6 +459,81 @@ class Local(object):
     #         + "\n"
     #         + "########################################################################"
     #     )
+
+    def _get(self, request):
+        try:
+            data = json.loads(request)
+            # we have the key
+            return json.dumps({"status": "ok", "data": self.get(data["key"])})
+        except Exception:
+            # key not present
+            return json.dumps({"status": "failed"})
+
+    def _set(self, request):
+        try:
+            data = json.loads(request)
+            key = data["key"]
+            value = data["value"]
+            self.set(key, value)
+            # TODO hacer q se llame a la plataforma, guardar la api, generar un id y asociar l id a la api
+            return json.dumps({"status": "ok"})
+
+        except Exception:
+            # something is not working
+            return json.dumps({"status": "failed"})
+
+    def get(self, key):
+        try:
+            return self.data_[key]
+        except Exception:
+            # not in our range
+            suc = self.local_.find_successor(
+                hash(key)
+            )  # TODO verificar si este hash sirve, q no debe y cambiarlo x el de utils
+            if self.local_.id() == suc.id():
+                # it's us but we don't have it
+                return None
+            try:
+                response = suc.command("get %s" % json.dumps({"key": key}))
+                if not response:
+                    raise Exception
+                value = json.loads(response)
+                if value["status"] != "ok":
+                    raise Exception
+                return value["data"]
+            except Exception:
+                return None
+
+    def set(self, key, value):
+        # eventually it will distribute the keys
+        self.data_[key] = value
+
+    @repeat_and_sleep(5)
+    def distribute_data(self):
+        to_remove = []
+        # to prevent from RTE in case data gets updated by other thread
+        keys = list(self.data_.keys())
+        for key in keys:
+            if self.predecessor() and not inrange(
+                hash(key), self.predecessor().id(1), self.id(1)
+            ):
+                try:
+                    node = self.find_successor(hash(key))
+                    node.command(
+                        "set %s" % json.dumps({"key": key, "value": self.data_[key]})
+                    )
+                    # print "moved %s into %s" % (key, node.id())
+                    to_remove.append(key)
+                    print("migrated")
+                except socket.error:
+                    print("error migrating")
+                    # we'll migrate it next time
+                    pass
+        # remove all the keys we do not own any more
+        for key in to_remove:
+            del self.data_[key]
+        # Keep calling us
+        return True
 
 
 if __name__ == "__main__":
