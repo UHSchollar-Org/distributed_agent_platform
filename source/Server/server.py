@@ -8,6 +8,7 @@ class AgentPlataform(object):
     def __init__(self) -> None:
         # {'api_name': [nombre_endopint,args,endpoint, description]}
         pass
+
     def register_api(self, api_name: str, list_data: List[str]):
         # TODO falta verificar que los endopints de las apis sean validos
         with open("Data/apis.json", "r") as archivo:
@@ -58,26 +59,28 @@ class AgentPlataform(object):
             else:
                 website = data[api_name]
                 url = website[index1][3]
-                print(website)
-                print(index1)
-                print(url)
+                # print(website)
+                # print(index1)
+                # print(url)
                 if params != None:
                     url = self._create_params_url(url, params)
-                print(url)
+                # print(url)
                 response = requests.get(url)
 
                 if response.status_code == 200:
                     # La solicitud fue exitosa
                     json_data = response.json()
-                    print(json_data)
+                    # print(json_data)
                 else:
                     # La solicitud no fue exitosa
                     print(
                         "La solicitud falló con el código de estado:",
                         response.status_code,
                     )
-                    return -1, None
-                return 1, (json_data)
+                    return "Failed"
+                return str(json_data)
+        else:
+            return "Api doesnt match any other"
 
     def _create_params_url(self, website, args):
         args_ = args[1 : len(args) - 1]

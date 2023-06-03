@@ -228,7 +228,7 @@ class Local(object):
 
     def id(self, offset=0):
         id = hashlib.sha256(self.address_.__str__().encode()).hexdigest()
-        id = int(id, 16)%pow(2,LOGSIZE)
+        id = int(id, 16) % pow(2, LOGSIZE)
         return (id + offset) % SIZE
 
     def successor(self):
@@ -355,8 +355,9 @@ class Local(object):
         succ = self.find_predecessor(id)
         return succ._get(json.dumps({"key": api_name}))
 
-    def use_agent(self, api_name, endpoint, params):
-        pass
+    def use_agent(self, api_name, endpoint, id, params=None):
+        succ = self.find_predecessor(id)
+        return succ._use_agent(api_name, endpoint, params)
 
     def show_agents(self):
         pass
@@ -426,6 +427,8 @@ class Local(object):
     #         + "\n"
     #         + "########################################################################"
     #     )
+    def _use_agent(self, api_name, endpoint, params):
+        return self.agnt_plat_server.comunicate_with_api(api_name, endpoint, params)
 
     def _get(self, request):
         try:
@@ -443,7 +446,7 @@ class Local(object):
             value = data["value"]
             api_id = self.set(key, value)
             # TODO hacer q se llame a la plataforma, guardar la api, generar un id y asociar l id a la api
-            return json.dumps({"status": "ok",'api_id' : api_id})
+            return json.dumps({"status": "ok", "api_id": api_id})
 
         except Exception:
             # something is not working
@@ -473,11 +476,11 @@ class Local(object):
 
     def set(self, key, value):
         # eventually it will distribute the keys
-        if  key in self.data_.keys():
-            return 'This agent already exist'
+        if key in self.data_.keys():
+            return "This agent already exist"
         else:
             self.data_[key] = value
-            return self.agnt_plat_server.register_api(key,value)
+            return self.agnt_plat_server.register_api(key, value)
 
     @repeat_and_sleep(5)
     def distribute_data(self):

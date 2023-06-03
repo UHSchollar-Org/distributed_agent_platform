@@ -52,7 +52,6 @@ class DHT(object):
             command = request.split("|")[0]
             # we take the command out
             request = request[len(command) + 1 :]
-
             # defaul : "" = not respond anything
             result = json.dumps("Not response")
             if command == "SET_AGENT":
@@ -65,6 +64,16 @@ class DHT(object):
             if command == "GET_AGENT":
                 id = utils.hash(request)
                 result = self.local_.get_agent(id, request)
+                print(result)
+
+            if command == "USE_AGENT":
+                tmp = request.split(" ")
+                id = utils.hash(request)
+                print(tmp, len(tmp))
+                if len(tmp) == 3:
+                    result = self.local_.use_agent(tmp[0], tmp[1], id, tmp[2])
+                else:
+                    result = self.local_.use_agent(tmp[0], tmp[1], id)
                 print(result)
 
             # if command == "FINISH":
