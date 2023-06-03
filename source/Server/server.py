@@ -7,30 +7,16 @@ import uuid
 class AgentPlataform(object):
     def __init__(self) -> None:
         # {'api_name': [nombre_endopint,args,endpoint, description]}
-        self.apis = {}
-
+        pass
     def register_api(self, api_name: str, list_data: List[str]):
-        """
-        Args:
-        ~~~~~
-            api_name (str): Nombre de la API
-            list_data (List[str]): Lista con cada uno de los endpoints
-
-        Returns:
-        ~~~~~~~~
-            _str_: Devuelve un id unico para la API registrada
-        """
-        if api_name in self.apis:
-            print(f"La api '{api_name}' ya existe!")
-            return 0
         # TODO falta verificar que los endopints de las apis sean validos
         with open("Data/apis.json", "r") as archivo:
             data = json.load(archivo)
         data[api_name] = list_data
         with open("Data/apis.json", "w") as archivo:
             json.dump(data, archivo)
-
         print(f"Api '{api_name}' registrada con exito!")
+        return self.asociate_id_api(api_name)
 
     def get_apis(self):
         """
@@ -102,27 +88,13 @@ class AgentPlataform(object):
         return url
 
     def asociate_id_api(self, api):
-        """
-        Funcion que guarda en un json el ID de cada API.
-        Args:
-        ~~~~
-            api (_str_): Nombre de la API
-
-        Returns:
-        ~~~~~~~
-            _str_: Devuelve un ID unico asociado a la API que se ingreso
-        """
         id = self.generate_id()
-        print("Se llamo al metodo de asociar id-api")
         with open("Data/user_api_description.json", "r") as archivo:
             data = json.load(archivo)
-        if id in data.keys():
-            return 0, {0: "El id ya existe"}
-        else:
-            data[id] = [api]
-            with open("Data/user_api_description.json", "w") as archivo:
-                json.dump(data, archivo)
-            return id
+        data[id] = [api]
+        with open("Data/user_api_description.json", "w") as archivo:
+            json.dump(data, archivo)
+        return id
 
     # def update_api(self, id, api_name, endpoint, updated_api):
     #     # TODO testing

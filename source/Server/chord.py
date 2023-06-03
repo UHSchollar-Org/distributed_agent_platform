@@ -70,8 +70,6 @@ class Local(object):
         new_local = Address(local_address.ip, local_address.port + 1)
         self.address_ = new_local
         print("self id = %s" % self.id())
-        if remote_address != None:
-            print(f"Local: {self.address_.port}, Remote: {remote_address.port}")
         self.shutdown_ = False
         # list of successors
         self.successors_ = []
@@ -443,9 +441,9 @@ class Local(object):
             data = json.loads(request)
             key = data["key"]
             value = data["value"]
-            self.set(key, value)
+            api_id = self.set(key, value)
             # TODO hacer q se llame a la plataforma, guardar la api, generar un id y asociar l id a la api
-            return json.dumps({"status": "ok"})
+            return json.dumps({"status": "ok",'api_id' : api_id})
 
         except Exception:
             # something is not working
@@ -475,7 +473,11 @@ class Local(object):
 
     def set(self, key, value):
         # eventually it will distribute the keys
-        self.data_[key] = value
+        if  key in self.data_.keys():
+            return 'This agent already exist'
+        else:
+            self.data_[key] = value
+            return self.agnt_plat_server.register_api(key,value)
 
     @repeat_and_sleep(5)
     def distribute_data(self):

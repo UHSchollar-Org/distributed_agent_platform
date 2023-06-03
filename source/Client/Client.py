@@ -6,7 +6,6 @@ def send_and_close(choice, message, socket: socket):
     socket.send(message.encode("utf-8"))
     data = socket.recv(1024)
     data = str(data.decode("utf-8"))
-    print(data)
     if choice == "1" or choice == "3" or choice == "4":
         print(data)
     if choice == 2:
