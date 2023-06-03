@@ -475,7 +475,11 @@ class Local(object):
 
     def set(self, key, value):
         # eventually it will distribute the keys
-        self.data_[key] = value
+        if key not in self.data_:
+            self.data_[key] = value
+        else:
+            #TODO: throw an exception or something
+            pass
 
     @repeat_and_sleep(5)
     def distribute_data(self):
