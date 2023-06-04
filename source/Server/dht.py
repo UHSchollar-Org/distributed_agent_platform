@@ -76,6 +76,10 @@ class DHT(object):
                     result = self.local_.use_agent(tmp[0], tmp[1], id)
                 print(result)
 
+            if command == "SHOW_ALL_AGENTS":
+                result = self.local_.show_agents()
+                print(result)
+            
             # if command == "FINISH":
             #     print(:)
             #     conn.close()

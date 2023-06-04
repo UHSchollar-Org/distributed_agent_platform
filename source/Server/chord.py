@@ -360,7 +360,32 @@ class Local(object):
         return succ._use_agent(api_name, endpoint, params)
 
     def show_agents(self):
-        pass
+        print("LLAMANDO SHOW_AGENTS IN CHORD.PY")
+        
+        agents = []
+        current_node = self
+        
+        print(current_node, "CURRENT NODE")
+        
+        agents = agents + list(current_node.data_.keys())
+        
+        print("ADD AGENTS OF FIRST NODE")
+        print("AGENTS", agents)
+        
+        current_node = current_node.find_successor(current_node.id())
+        
+        print("FIRST NODE FIND SUCCESSOR")
+        print(current_node)
+        
+        while current_node != self:
+            print("DENTRO WHILE")
+            agents = agents + list(current_node.data_.keys())
+            current_node = current_node.find_successor(current_node.id())
+        
+        print("DESPUES DEL WHILE")
+        agents.sort()
+        return json.dumps(agents)
+        
 
     def delete_agent(self, id_api: str):
         pass
