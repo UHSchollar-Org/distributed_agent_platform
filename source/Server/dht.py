@@ -56,8 +56,8 @@ class DHT(object):
             result = json.dumps("Not response")
             if command == "SET_AGENT":
                 # mess = request.split(":", maxsplit=1)
-                id = utils.hash(request)
                 tmp = request.split(":", maxsplit=1)
+                id = utils.hash(tmp[0])
                 result = self.local_.set_agent(id, key=tmp[0], value=tmp[1])
                 print(result)
 
@@ -76,6 +76,12 @@ class DHT(object):
                     result = self.local_.use_agent(tmp[0], tmp[1], id)
                 print(result)
 
+            if command == "SHOW_ALL_AGENTS":
+                print("COMMAND SHOW ALL AGENTS")
+                result = self.local_.show_agents()
+                print("DESPUES DE SHOW ALL AGENTS EN DHT")
+                print(result)
+            
             # if command == "FINISH":
             #     print(:)
             #     conn.close()

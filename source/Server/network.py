@@ -24,14 +24,3 @@ def send_to_socket(s, msg):
     tmp = msg + "\r\n"
     msg_ncode = tmp.encode("utf-8")
     s.sendall(msg_ncode)
-
-
-def send_message(ip, port, message):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    # connect to server on local computer
-    s.connect((ip, port))
-    s.send(message.encode("utf-8"))
-    data = s.recv(1024)
-    s.close()
-    return data.decode("utf-8")
