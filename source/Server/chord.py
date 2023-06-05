@@ -348,15 +348,17 @@ class Local(object):
         self.commands_ = [t for t in self.commands_ if t[0] != cmd]
 
     def set_agent(self, id: str, key: str, value: str):
+        print(id)
         succ = self.find_successor(id)
         return succ._set(json.dumps({"key": key, "value": value}))
 
     def get_agent(self, id: str, api_name: str):
-        succ = self.find_predecessor(id)
+        print(id)
+        succ = self.find_successor(id)
         return succ._get(json.dumps({"key": api_name}))
 
     def use_agent(self, api_name, endpoint, id, params=None):
-        succ = self.find_predecessor(id)
+        succ = self.find_successor(id)
         return succ._use_agent(api_name, endpoint, params)
 
     def show_agents(self):
