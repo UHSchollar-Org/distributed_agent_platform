@@ -7,7 +7,6 @@ import random
 import time
 import hashlib
 
-from utils import hash
 from address import Address, inrange
 from remote import Remote
 from settings import *
@@ -84,6 +83,12 @@ class Local(object):
         # data
         self.data_ = {}
 
+    def __str__(self):
+        return "Local %s" % self.address_
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
     # is this id within our range?
     def is_ours(self, id):
         assert id >= 0 and id < SIZE
@@ -107,7 +112,7 @@ class Local(object):
         self.daemons_["fix_fingers"] = Daemon(self, "fix_fingers")
         self.daemons_["stabilize"] = Daemon(self, "stabilize")
         self.daemons_["update_successors"] = Daemon(self, "update_successors")
-        self.daemons_["distribute_data"] = Daemon(self, "distribute_data")
+        #self.daemons_["distribute_data"] = Daemon(self, "distribute_data")
         for key in self.daemons_:
             self.daemons_[key].start()
 
@@ -227,8 +232,7 @@ class Local(object):
         ]
 
     def id(self, offset=0):
-        id = hashlib.sha256(self.address_.__str__().encode()).hexdigest()
-        id = int(id, 16) % pow(2, LOGSIZE)
+        id = hash(self.address_.__str__())
         return (id + offset) % SIZE
 
     def successor(self):
@@ -297,6 +301,7 @@ class Local(object):
                 break
             request = read_from_socket(conn)
             command = request.split(" ")[0]
+            
             # we take the command out
             request = request[len(command) + 1 :]
 
@@ -325,7 +330,20 @@ class Local(object):
                 self.notify(Remote(npredecessor))
             if command == "get_successors":
                 result = json.dumps(self.get_successors())
+            
+            if command == 'set_agent':
+                temp = request.split()
+                result = self._set(json.dumps({"key": temp[0], "value": temp[1]}))
 
+            if command == 'get_agent':
+                api_name = request
+                result = self._get(json.dumps({"key" : api_name}))
+            
+            if command == 'get_all_agents':
+                print("COMMAND GET ALL AGENTS EN CHORD")
+                result = json.dumps({"agents" : list(self.data_.keys())})
+                print("RESULT DEL COMMAND", result)
+            
             # or it could be a user specified operation
             for t in self.command_:
                 if command == t[0]:
@@ -349,41 +367,59 @@ class Local(object):
 
     def set_agent(self, id: str, key: str, value: str):
         succ = self.find_successor(id)
-        return succ._set(json.dumps({"key": key, "value": value}))
+        
+        if succ.address_ != self.address_:
+            result = succ.set_agent_(key, value)
+            return result
+        else:
+            return succ._set(json.dumps({"key": key, "value": value}))
 
     def get_agent(self, id: str, api_name: str):
-        succ = self.find_predecessor(id)
-        return succ._get(json.dumps({"key": api_name}))
+        succ = self.find_successor(id)
+        
+        if succ.address_ != self.address_:
+            result = succ.get_agent_(api_name)
+            return result
+        else:
+            return succ._get(json.dumps({"key": api_name}))
 
     def use_agent(self, api_name, endpoint, id, params=None):
-        succ = self.find_predecessor(id)
+        succ = self.find_successor(id)
+        
+        if succ.address_ != self.address_:
+            succ.open_connection()
+            
+            succ.send("ENVIAR MENSAJE PARA USAR UN AGENTE")
+            response = succ.recv()
+            
+            succ.close_connection()
+            
+            #hacer algo con el response
+        
         return succ._use_agent(api_name, endpoint, params)
 
     def show_agents(self):
-        print("LLAMANDO SHOW_AGENTS IN CHORD.PY")
-        
+        print("SHOW AGENTS IN CHORD")
         agents = []
         current_node = self
-        
-        print(current_node, "CURRENT NODE")
-        
+        print("NODO INICIAL",current_node)
+        print("ID DEL NODO INICIAL", current_node.id())
         agents = agents + list(current_node.data_.keys())
+        current_node = current_node.successor()
+        print("SEGUNDO NODO", current_node)
+        print("ID DEL SEGUNDO NODO", current_node.id())
+        while current_node.address_ != self.address_:
+            print("SUCCESSOR DEL NODO EN EL WHILE EN SHOW AGENTS CHORD", current_node)
+            print("DENTRO DEL WHILE SHOW AGENTS")
+            response = current_node.get_all_agents()
+            print("RESPONSE DEL MENSAJE DEL WHILE", response)
+            agents = agents + response.split()
+            print("AGENTES ACTUALIZADOS", agents)
+            
+            current_node = current_node.successor()
         
-        print("ADD AGENTS OF FIRST NODE")
-        print("AGENTS", agents)
-        
-        current_node = current_node.find_successor(current_node.id())
-        
-        print("FIRST NODE FIND SUCCESSOR")
-        print(current_node)
-        
-        while current_node != self:
-            print("DENTRO WHILE")
-            agents = agents + list(current_node.data_.keys())
-            current_node = current_node.find_successor(current_node.id())
-        
-        print("DESPUES DEL WHILE")
         agents.sort()
+        print("AGENTES FINALES ORDENADOS", agents)
         return json.dumps(agents)
         
 
@@ -457,7 +493,10 @@ class Local(object):
 
     def _get(self, request):
         try:
+            print("EN EL _GET DE CHORD")
+            print("REQUEST", request)
             data = json.loads(request)
+            print("DATA", data)
             # we have the key
             return json.dumps({"status": "ok", "data": self.get(data["key"])})
         except Exception:
@@ -484,7 +523,7 @@ class Local(object):
             # not in our range
             suc = self.local_.find_successor(
                 hash(key)
-            )  # TODO verificar si este hash sirve, q no debe y cambiarlo x el de utils
+            )
             if self.local_.id() == suc.id():
                 # it's us but we don't have it
                 return None
