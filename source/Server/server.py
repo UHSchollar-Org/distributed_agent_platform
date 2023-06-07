@@ -55,14 +55,15 @@ class AgentPlataform(object):
                     index1 = i
                     break
             if index1 == -1:
-                return -1, {-1: "No se encontro el endopint"}
+                return "No se encontro el endopint"
             else:
                 website = data[api_name]
                 url = website[index1][3]
+
                 # print(website)
                 # print(index1)
                 # print(url)
-                if params != None:
+                if params != "None":
                     url = self._create_params_url(url, params)
                 # print(url)
                 response = requests.get(url)
@@ -123,8 +124,10 @@ class AgentPlataform(object):
         # TODO testing
         with open("Data/user_api_description.json", "r") as archivo:
             data = json.load(archivo)
+            print(data)
+            print(id)
         if id not in data.keys():
-            return False
+            return "Error al eliminar, rectifique el id y el nombre del agente"
         else:
             with open("Data/user_api_description.json", "r") as archivo:
                 data_ = json.load(archivo)
@@ -137,7 +140,7 @@ class AgentPlataform(object):
                 data.pop(api_name)
             with open("Data/apis.json", "w") as archivo:
                 json.dump(data, archivo)
-            return True
+            return "Agente eliminado con exito!"
 
     def generate_id(self):
         unique_id = uuid.uuid4()

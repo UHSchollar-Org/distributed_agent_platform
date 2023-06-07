@@ -55,10 +55,10 @@ class DHT(object):
             # defaul : "" = not respond anything
             result = json.dumps("Not response")
             if command == "SET_AGENT":
-                # mess = request.split(":", maxsplit=1)
                 tmp = request.split(":", maxsplit=1)
                 id = utils.hash(tmp[0])
-                result = self.local_.set_agent(id, key=tmp[0], value=tmp[1])
+                print(f"ID: {id}")
+                result = self.local_.set_agent(id, key=tmp[0], value=tmp[1].split("-"))
                 print(result)
 
             if command == "GET_AGENT":
@@ -69,11 +69,13 @@ class DHT(object):
             if command == "USE_AGENT":
                 tmp = request.split(" ")
                 id = utils.hash(request)
-                print(tmp, len(tmp))
-                if len(tmp) == 3:
-                    result = self.local_.use_agent(tmp[0], tmp[1], id, tmp[2])
-                else:
-                    result = self.local_.use_agent(tmp[0], tmp[1], id)
+                try:
+                    if len(tmp) == 3:
+                        result = self.local_.use_agent(tmp[0], tmp[1], id, tmp[2])
+                    else:
+                        result = self.local_.use_agent(tmp[0], tmp[1], id)
+                except:
+                    result = "Error de solicitud"
                 print(result)
 
             if command == "SHOW_ALL_AGENTS":
@@ -81,7 +83,17 @@ class DHT(object):
                 result = self.local_.show_agents()
                 print("DESPUES DE SHOW ALL AGENTS EN DHT")
                 print(result)
-            
+
+            if command == "DELETE":
+                tmp = request.split(":")
+                print(tmp, " en DELETE")
+                if len(tmp) != 2:
+                    result = "Error de solicitud"
+                id = utils.hash(tmp[0])
+                result = self.local_.delete_agent(tmp[1], id)
+
+                print(result, type(result))
+
             # if command == "FINISH":
             #     print(:)
             #     conn.close()

@@ -41,14 +41,14 @@ class Remote(object):
 
     def __str__(self):
         return "Remote %s" % self.address_
-    
+
     def __repr__(self) -> str:
         return self.__str__()
 
     def id(self, offset=0):
         id = hash(self.address_.__str__())
         return (id + offset) % SIZE
-        
+
     def send(self, msg):
         # yo anhadi lo del encode
         tmp = msg + "\r\n"
@@ -124,19 +124,19 @@ class Remote(object):
     @requires_connection
     def notify(self, node):
         self.send("notify %s %s" % (node.address_.ip, node.address_.port))
-    
+
     @requires_connection
-    def set_agent_(self, key, value):
-        self.send(f"set_agent {key} {value}")
+    def set_agent_remote(self, request):
+        self.send(f"set_agent {request}")
         response = json.loads(self.recv())
         return str(response)
 
     @requires_connection
-    def get_agent_(self, api_name):
+    def get_agent_remote(self, api_name):
         self.send(f"get_agent {api_name}")
         response = json.loads(self.recv())
         return str(response)
-    
+
     @requires_connection
     def get_all_agents(self):
         print("GET ALL AGENTS IN REMOTE")
@@ -144,4 +144,16 @@ class Remote(object):
         print("DESPUES DE ENVIAR GET_ALL_AGENTS EN REMOTE")
         response = json.loads(self.recv())
         print("RESPONSE DE REMOTE", response)
-        return str(response) 
+        return str(response)
+
+    @requires_connection
+    def use_agent_remote(self, api_name, endpoint, params=None):
+        self.send(f"use_agent {api_name} {endpoint} {params}")
+        response = self.recv()
+        return str(response)
+
+    @requires_connection
+    def delete_agent_remote(self, id_api):
+        self.send(f"delete {id_api}")
+        response = self.recv()
+        return response

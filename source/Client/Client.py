@@ -31,21 +31,25 @@ def console():
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((ip, port))
-        print("!!")
+
+        # insert
         if choice == "1":
             key = input("ENTER THE KEY: ")
             val = input("ENTER THE VALUE: ")
             message = "SET_AGENT|" + str(key) + ":" + str(val) + "\r\n"
             send_and_close(choice, message, sock)
 
+        # get
         elif choice == "2":
             key = input("ENTER THE KEY: ")
             message = "GET_AGENT|" + str(key) + "\r\n"
             send_and_close(choice, message, sock)
 
+        # delete
         elif choice == "3":
-            key = input("ENTER THE ID : KEY ")
-            message = "delete|" + str(key)
+            key = input("ENTER THE AGENT NAME: ")
+            id = input("ENTER THE AGENT ID: ")
+            message = "DELETE|" + str(key) + ":" + str(id) + "\r\n"
             send_and_close(choice, message, sock)
 
         elif choice == "4":
@@ -57,7 +61,7 @@ def console():
             message = "SHOW_ALL_AGENTS\r\n"
             print("SHOWING ALL AGENTS")
             send_and_close(choice, message, sock)
-        
+
         elif choice == "6":
             print("Closing the socket")
             sock.close()

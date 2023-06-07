@@ -6,6 +6,7 @@ import threading
 import random
 import time
 import hashlib
+from wsgiref.util import request_uri
 
 from address import Address, inrange
 from remote import Remote
@@ -85,10 +86,10 @@ class Local(object):
 
     def __str__(self):
         return "Local %s" % self.address_
-    
+
     def __repr__(self) -> str:
         return self.__str__()
-    
+
     # is this id within our range?
     def is_ours(self, id):
         assert id >= 0 and id < SIZE
@@ -112,7 +113,7 @@ class Local(object):
         self.daemons_["fix_fingers"] = Daemon(self, "fix_fingers")
         self.daemons_["stabilize"] = Daemon(self, "stabilize")
         self.daemons_["update_successors"] = Daemon(self, "update_successors")
-        #self.daemons_["distribute_data"] = Daemon(self, "distribute_data")
+        # self.daemons_["distribute_data"] = Daemon(self, "distribute_data")
         for key in self.daemons_:
             self.daemons_[key].start()
 
@@ -175,6 +176,8 @@ class Local(object):
         print("=============== FINGER TABLE ==================")
         print(self.finger_)
         print("===============================================")
+        print("=============== Successors ====================")
+        print(self.successors_)
         print("===============================================")
         print("=============== DATA STORE ====================")
         print(str(self.data_))
@@ -301,7 +304,7 @@ class Local(object):
                 break
             request = read_from_socket(conn)
             command = request.split(" ")[0]
-            
+
             # we take the command out
             request = request[len(command) + 1 :]
 
@@ -330,20 +333,31 @@ class Local(object):
                 self.notify(Remote(npredecessor))
             if command == "get_successors":
                 result = json.dumps(self.get_successors())
-            
-            if command == 'set_agent':
-                temp = request.split()
-                result = self._set(json.dumps({"key": temp[0], "value": temp[1]}))
 
-            if command == 'get_agent':
+            if command == "set_agent":
+                print(request, "????????")
+                result = self._set(request)
+
+            if command == "get_agent":
                 api_name = request
-                result = self._get(json.dumps({"key" : api_name}))
-            
-            if command == 'get_all_agents':
+                result = self._get(json.dumps({"key": api_name}))
+
+            if command == "get_all_agents":
                 print("COMMAND GET ALL AGENTS EN CHORD")
-                result = json.dumps({"agents" : list(self.data_.keys())})
+                result = json.dumps({"agents": list(self.data_.keys())})
                 print("RESULT DEL COMMAND", result)
-            
+
+            if command == "use_agent":
+                tmp = request.split(" ")
+                result = self._use_agent(tmp[0], tmp[1], tmp[2])
+                print(result)
+
+            if command == "delete":
+                api_id = request
+                print(api_id, "en delete")
+                result = self._delete_agent(api_id)
+                print(result, "!!!")
+
             # or it could be a user specified operation
             for t in self.command_:
                 if command == t[0]:
@@ -366,44 +380,36 @@ class Local(object):
         self.commands_ = [t for t in self.commands_ if t[0] != cmd]
 
     def set_agent(self, id: str, key: str, value: str):
-        print(id)
         succ = self.find_successor(id)
-        
+
         if succ.address_ != self.address_:
-            result = succ.set_agent_(key, value)
+            result = succ.set_agent_remote(json.dumps({"key": key, "value": value}))
             return result
         else:
             return succ._set(json.dumps({"key": key, "value": value}))
 
     def get_agent(self, id: str, api_name: str):
         succ = self.find_successor(id)
-        
+
         if succ.address_ != self.address_:
-            result = succ.get_agent_(api_name)
+            result = succ.get_agent_remote(api_name)
             return result
         else:
             return succ._get(json.dumps({"key": api_name}))
 
     def use_agent(self, api_name, endpoint, id, params=None):
         succ = self.find_successor(id)
-        
         if succ.address_ != self.address_:
-            succ.open_connection()
-            
-            succ.send("ENVIAR MENSAJE PARA USAR UN AGENTE")
-            response = succ.recv()
-            
-            succ.close_connection()
-            
-            #hacer algo con el response
-        
-        return succ._use_agent(api_name, endpoint, params)
+            result = succ.use_agent_remote(api_name, endpoint, params)
+            return result
+        else:
+            return succ._use_agent(api_name, endpoint, params)
 
     def show_agents(self):
         print("SHOW AGENTS IN CHORD")
         agents = []
         current_node = self
-        print("NODO INICIAL",current_node)
+        print("NODO INICIAL", current_node)
         print("ID DEL NODO INICIAL", current_node.id())
         agents = agents + list(current_node.data_.keys())
         current_node = current_node.successor()
@@ -416,81 +422,32 @@ class Local(object):
             print("RESPONSE DEL MENSAJE DEL WHILE", response)
             agents = agents + response.split()
             print("AGENTES ACTUALIZADOS", agents)
-            
+
             current_node = current_node.successor()
-        
+
         agents.sort()
         print("AGENTES FINALES ORDENADOS", agents)
         return json.dumps(agents)
-        
 
-    def delete_agent(self, id_api: str):
-        pass
+    def delete_agent(self, id_api, id):
+        succ = self.find_successor(id)
+        if succ.address_ != self.address_:
+            print("pal remote")
+            result = succ.delete_agent_remote(id_api)
+        else:
+            result = succ._delete_agent(id_api)
+        return result
+
+    def _delete_agent(self, id_api: str):
+        result = self.agnt_plat_server.delete_api(id_api)
+        return result
 
     def get_agent_functionality(self, descripcion: str):
         pass
 
-    # def search_key(self, key):
-    #     # The function to handle the incoming key_value pair search request from the client this function searches for the
-    #     # correct node on which the key_value pair is stored and then sends a message to that node to return the value
-    #     # corresponding to that key.
-    #     id_of_key = hash(str(key))
-    #     succ = self.find_successor(id_of_key)
-    #     ip = succ.address_.ip
-    #     port = succ.address_.port
-    #     print(
-    #         "Succ found for searching key",
-    #         id_of_key,
-    #         succ.address_.ip,
-    #         succ.address_.port,
-    #     )
-    #     remote = Remote(succ.address_)
-    #     remote.open_connection()
-    #     data = send_to_socket(remote.socket_, f"SEARCH_SERVER|{key}")
-    #     print("NUEVA TECNICA")
-    #     print(data)
-    #     return data
-    #     data = send_to_socket(succ.socket_, f"SEARCH_SERVER|{key}")  #! esto sta mal
-
-    # def insert_key(self, key, value):
-    #     # The function to handle the incoming key_value pair insertion request from the client this function searches for the
-    #     # correct node on which the key_value pair needs to be stored and then sends a message to that node to store the
-    #     # key_val pair in its data_store
-    #     id_of_key = hash(str(key))
-    #     succ = self.find_successor(id_of_key)
-    #     # print("Succ found for inserting key" , id_of_key , succ)
-    #     ip = succ.address_.ip
-    #     port = succ.address_.port
-    #     if str(ip) == str(succ.address_.ip) and str(port) == str(succ.address_.port):
-    #         args_ = Aux_.split_params(value)
-    #         self.data_store.insert(key, value)
-    #         self.agnt_plat_server.register_api(key, args_)
-    #         api_id = self.agnt_plat_server.asociate_id_api(key)
-    #         #!Aqui es donde se llama al metodo de almacenar la api
-    #         result = f"Inserted : {str(api_id)}"
-    #     else:
-    #         api_id = send_message(
-    #             ip, port, "INSERT_SERVER|" + str(key) + ":" + str(value)
-    #         )
-    #         print("Entre al else")
-    #     print(api_id)
-    #     return (
-    #         "Inserted at node id "
-    #         + str(self.id())
-    #         + " key was "
-    #         + str(key)
-    #         + " key hash was "
-    #         + str(id_of_key)
-    #         + "\n"
-    #         + "########################################################################"
-    #         + "\n"
-    #         + "The ID associated with your API is "
-    #         + f"{api_id}"
-    #         + "\n"
-    #         + "########################################################################"
-    #     )
     def _use_agent(self, api_name, endpoint, params):
-        return self.agnt_plat_server.comunicate_with_api(api_name, endpoint, params)
+        result = self.agnt_plat_server.comunicate_with_api(api_name, endpoint, params)
+        return result
 
     def _get(self, request):
         try:
@@ -506,10 +463,13 @@ class Local(object):
 
     def _set(self, request):
         try:
+            new_ = []
             data = json.loads(request)
+            for x in data["value"]:
+                print(x)
+                new_.append(x.split(" "))
             key = data["key"]
-            value = data["value"]
-            api_id = self.set(key, value)
+            api_id = self.set(key, new_)
             # TODO hacer q se llame a la plataforma, guardar la api, generar un id y asociar l id a la api
             return json.dumps({"status": "ok", "api_id": api_id})
 
@@ -522,9 +482,7 @@ class Local(object):
             return self.data_[key]
         except Exception:
             # not in our range
-            suc = self.local_.find_successor(
-                hash(key)
-            )
+            suc = self.local_.find_successor(hash(key))
             if self.local_.id() == suc.id():
                 # it's us but we don't have it
                 return None
