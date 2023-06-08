@@ -96,7 +96,7 @@ class AgentPlataform(object):
             json.dump(data, archivo)
         return id
 
-    def delete_api(self, id):
+    def delete_api_server(self, id):
         # TODO testing
         with open(self.apis_id, "r") as archivo:
             data = json.load(archivo)

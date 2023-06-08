@@ -90,7 +90,7 @@ class DHT(object):
                 if len(tmp) != 2:
                     result = "Error de solicitud"
                 id = utils.hash(tmp[0])
-                result = self.local_.delete_agent(tmp[1], id)
+                result = self.local_.delete_agent(tmp[1], id, tmp[0])
 
                 print(result, type(result))
 
@@ -113,10 +113,10 @@ def create_dht(lport):
 if __name__ == "__main__":
     import sys
 
-    if len(sys.argv) == 2:
-        dht = DHT(Address("127.0.0.1", sys.argv[1]))
+    if len(sys.argv) == 3:
+        dht = DHT(Address(sys.argv[1], sys.argv[2]))
     else:
-        dht = DHT(Address("127.0.0.1", sys.argv[1]), Address("127.0.0.1", sys.argv[2]))
+        dht = DHT(Address(sys.argv[1], sys.argv[2]), Address(sys.argv[3], sys.argv[4]))
     input("Press any key to shutdown")
     print("shuting down..")
     dht.shutdown()

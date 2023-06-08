@@ -312,6 +312,7 @@ class Local(object):
         # should have a threadpool here :/
         # listen to incomming connections
         self.socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print(self.address_)
         self.socket_.bind((self.address_.ip, int(self.address_.port)))
         self.socket_.listen(10)
         print("Escuchando en el puerto: ", self.address_.port)
@@ -448,17 +449,21 @@ class Local(object):
         print("AGENTES FINALES ORDENADOS", agents)
         return json.dumps(agents)
 
-    def delete_agent(self, id_api, id):
+    def delete_agent(self, id_api, id, api_name):
         succ = self.find_successor(id)
         if succ.address_ != self.address_:
             print("pal remote")
             result = succ.delete_agent_remote(id_api)
         else:
-            result = succ._delete_agent(id_api)
+            result = succ._delete_agent(id_api, api_name)
         return result
 
-    def _delete_agent(self, id_api: str):
-        result = self.agnt_plat_server.delete_api(id_api)
+    def _delete_agent(self, id_api: str, api_name):
+        result = self.agnt_plat_server.delete_api_server(id_api)
+        try:
+            self.data_.pop(api_name)
+        except:
+            result = "Invalid api_name"
         return result
 
     def get_agent_functionality(self, descripcion: str):
