@@ -16,9 +16,8 @@ class Address:
 
 
 def get_ip_port():
-    # ip = input("Give the ip address of a node")
-    ip = "127.0.0.1"
-    # port = 9000
+    ip = input("Give the ip address of a node: ")
+
     port = int(input("Give the port number of a node: "))
 
     address = Address(ip, port)

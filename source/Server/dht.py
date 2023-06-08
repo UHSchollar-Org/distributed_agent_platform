@@ -116,7 +116,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         dht = DHT(Address("127.0.0.1", sys.argv[1]))
     else:
-        dht = DHT(Address("127.0.0.1", sys.argv[1]), Address("127.0.0.1", sys.argv[2]))
+        dht = DHT(Address(sys.argv[1], sys.argv[2]), Address(sys.argv[3], sys.argv[4]))
     input("Press any key to shutdown")
     print("shuting down..")
     dht.shutdown()
