@@ -2,19 +2,20 @@ import json
 from typing import List
 import requests
 import uuid
+import os
 
 
 class AgentPlataform(object):
-    def __init__(self) -> None:
-        # {'api_name': [nombre_endopint,args,endpoint, description]}
-        pass
+    def __init__(self, path) -> None:
+        self.apis = path + ".json"
+        self.apis_id = path + "api_id" + ".json"
 
     def register_api(self, api_name: str, list_data: List[str]):
         # TODO falta verificar que los endopints de las apis sean validos
-        with open("Data/apis.json", "r") as archivo:
+        with open(self.apis, "r") as archivo:
             data = json.load(archivo)
         data[api_name] = list_data
-        with open("Data/apis.json", "w") as archivo:
+        with open(self.apis, "w") as archivo:
             json.dump(data, archivo)
         print(f"Api '{api_name}' registrada con exito!")
         return self.asociate_id_api(api_name)
@@ -25,7 +26,7 @@ class AgentPlataform(object):
         ~~~~~~~
             _str_: Devuelve la lista de todas las APIs
         """
-        with open("Data/apis.json", "r") as archivo:
+        with open(self.apis, "r") as archivo:
             data = json.load(archivo)
         return data
 
@@ -46,7 +47,7 @@ class AgentPlataform(object):
             _type_: _description_
         """
         print("Se llamo al metodo de comunicarse con la api")
-        with open("Data/apis.json", "r") as archivo:
+        with open(self.apis, "r") as archivo:
             data = json.load(archivo)
         if api_name in data.keys():
             index1 = -1
@@ -59,13 +60,8 @@ class AgentPlataform(object):
             else:
                 website = data[api_name]
                 url = website[index1][3]
-
-                # print(website)
-                # print(index1)
-                # print(url)
                 if params != "None":
                     url = self._create_params_url(url, params)
-                # print(url)
                 response = requests.get(url)
 
                 if response.status_code == 200:
@@ -93,52 +89,32 @@ class AgentPlataform(object):
 
     def asociate_id_api(self, api):
         id = self.generate_id()
-        with open("Data/user_api_description.json", "r") as archivo:
+        with open(self.apis_id, "r") as archivo:
             data = json.load(archivo)
         data[id] = [api]
-        with open("Data/user_api_description.json", "w") as archivo:
+        with open(self.apis_id, "w") as archivo:
             json.dump(data, archivo)
         return id
 
-    # def update_api(self, id, api_name, endpoint, updated_api):
-    #     # TODO testing
-    #     # formato de cada api
-    #     # nombre de la api[0], nombre del endopint, [params], direccion http, descripcion
-    #     with open("Data/user_api_description.json", "r") as archivo:
-    #         data = json.load(archivo)
-    #     if id not in data.keys():
-    #         return -1, "Invalid ID"
-    #     with open("Data/apis.json", "r") as archivo:
-    #         data_ = json.load(archivo)
-    #     if api_name not in data_.keys():
-    #         return -1, "Nombre de api invalido"
-    #     index = 0
-    #     for i, api in enumerate(data[api_name]):
-    #         if api[1] == endpoint:
-    #             index = i
-    #             break
-    #     data[api_name][index] = updated_api
-    #     return 1, "Api udpated succefuly"
-
     def delete_api(self, id):
         # TODO testing
-        with open("Data/user_api_description.json", "r") as archivo:
+        with open(self.apis_id, "r") as archivo:
             data = json.load(archivo)
             print(data)
             print(id)
         if id not in data.keys():
             return "Error al eliminar, rectifique el id y el nombre del agente"
         else:
-            with open("Data/user_api_description.json", "r") as archivo:
+            with open(self.apis_id, "r") as archivo:
                 data_ = json.load(archivo)
             api_name = data_[id][0]
             data_.pop(id)
-            with open("Data/user_api_description.json", "w") as archivo:
+            with open(self.apis_id, "w") as archivo:
                 json.dump(data_, archivo)
-            with open("Data/apis.json", "r") as archivo:
+            with open(self.apis, "r") as archivo:
                 data = json.load(archivo)
                 data.pop(api_name)
-            with open("Data/apis.json", "w") as archivo:
+            with open(self.apis, "w") as archivo:
                 json.dump(data, archivo)
             return "Agente eliminado con exito!"
 

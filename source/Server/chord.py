@@ -1,13 +1,13 @@
 #!/bin/python
+from operator import le
+import os
 import sys
 import json
 import socket
 import threading
 import random
 import time
-import hashlib
-from wsgiref.util import request_uri
-
+import utils
 from address import Address, inrange
 from remote import Remote
 from settings import *
@@ -73,16 +73,36 @@ class Local(object):
         self.shutdown_ = False
         # list of successors
         self.successors_ = []
+        # data
+        self.data_ = {}
         # join the DHT
         self.join(remote_address)  # TODO problemas con el join
         # we don't have deamons until we start
         self.daemons_ = {}
         # initially no commands
         self.command_ = []
+        # crear el archivo de las api y los api_id
+        self.file_name = os.path.join("Data", str(utils.hash(str(self.address_))))
+        # load Data
+        self.load_data()
         # plataforma agente
-        self.agnt_plat_server = AgentPlataform()
-        # data
-        self.data_ = {}
+        self.agnt_plat_server = AgentPlataform(self.file_name)
+
+    def load_data(self):
+        if os.path.exists(self.file_name + ".json"):
+            with open(self.file_name + ".json", "r") as my_file:
+                data_json = json.load(my_file)
+                if len(data_json) != 0:
+                    for x in data_json.keys():
+                        self.data_[x] = data_json[x]
+        else:
+            file = open(self.file_name + ".json", "w")
+            datos = {}
+            json.dump(datos, file)
+            file_id_api = open(self.file_name + "api_id" + ".json", "w")
+            json.dump(datos, file_id_api)
+            file.close()
+            file_id_api.close()
 
     def __str__(self):
         return "Local %s" % self.address_
@@ -113,7 +133,7 @@ class Local(object):
         self.daemons_["fix_fingers"] = Daemon(self, "fix_fingers")
         self.daemons_["stabilize"] = Daemon(self, "stabilize")
         self.daemons_["update_successors"] = Daemon(self, "update_successors")
-        # self.daemons_["distribute_data"] = Daemon(self, "distribute_data")
+        self.daemons_["distribute_data"] = Daemon(self, "distribute_data")
         for key in self.daemons_:
             self.daemons_[key].start()
 
@@ -335,7 +355,6 @@ class Local(object):
                 result = json.dumps(self.get_successors())
 
             if command == "set_agent":
-                print(request, "????????")
                 result = self._set(request)
 
             if command == "get_agent":
@@ -462,20 +481,19 @@ class Local(object):
             return json.dumps({"status": "failed"})
 
     def _set(self, request):
-        try:
-            new_ = []
-            data = json.loads(request)
-            for x in data["value"]:
-                print(x)
-                new_.append(x.split(" "))
-            key = data["key"]
-            api_id = self.set(key, new_)
-            # TODO hacer q se llame a la plataforma, guardar la api, generar un id y asociar l id a la api
-            return json.dumps({"status": "ok", "api_id": api_id})
+        # try:
+        new_ = []
+        data = json.loads(request)
+        for x in data["value"]:
+            new_.append(x.split(" "))
+        key = data["key"]
+        api_id = self.set(key, new_)
+        # TODO hacer q se llame a la plataforma, guardar la api, generar un id y asociar l id a la api
+        return json.dumps({"status": "ok", "api_id": api_id})
 
-        except Exception:
-            # something is not working
-            return json.dumps({"status": "failed"})
+        # except Exception:
+        #     # something is not working
+        #     return json.dumps({"status": "failed"})
 
     def get(self, key):
         try:
