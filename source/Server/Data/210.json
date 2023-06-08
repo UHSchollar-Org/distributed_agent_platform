@@ -1,1 +1,1 @@
-{"ramon": [["sanchez"]]}
+{"ramon": [["sanchez"]], "Hola": [["Hola", "hola", "[]", "http://127.0.0.1:8001/hola/", "\"Dice", "hola\""]], "ApiCalculator": [["ApiCalculator", "add", "[x,y]", "http://127.0.0.1:8002/add/", "\"Suma dos numeros\""], ["ApiCalculator", "sub", "[x,y]", "http://127.0.0.1:8002/sub/", "\"Resta dos numeros\""]]}

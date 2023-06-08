@@ -490,7 +490,7 @@ class Local(object):
         new_ = []
         data = json.loads(request)
         for x in data["value"]:
-            new_.append(x.split(" "))
+            new_.append(x.split(" ", maxsplit=4))
         key = data["key"]
         api_id = self.set(key, new_)
         # TODO hacer q se llame a la plataforma, guardar la api, generar un id y asociar l id a la api
