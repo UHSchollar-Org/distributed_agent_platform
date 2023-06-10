@@ -88,7 +88,7 @@ class AgentPlataform(object):
         return url
 
     def asociate_id_api(self, api):
-        id = self.generate_id()
+        id = self.generate_id(api)
         with open(self.apis_id, "r") as archivo:
             data = json.load(archivo)
         data[id] = [api]
@@ -118,6 +118,8 @@ class AgentPlataform(object):
                 json.dump(data, archivo)
             return "Agente eliminado con exito!"
 
-    def generate_id(self):
-        unique_id = uuid.uuid4()
+    def generate_id(self, api):
+        print("11111111111111111111111111111111111")
+        namespace_oid = uuid.NAMESPACE_OID
+        unique_id = uuid.uuid5(namespace_oid, api)
         return str(unique_id)

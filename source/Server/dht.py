@@ -110,13 +110,24 @@ def create_dht(lport):
     return r
 
 
+# if __name__ == "__main__":
+#     import sys
+
+#     if len(sys.argv) == 3:
+#         dht = DHT(Address(sys.argv[1], sys.argv[2]))
+#     else:
+#         dht = DHT(Address(sys.argv[1], sys.argv[2]), Address(sys.argv[3], sys.argv[4]))
+#     input("Press any key to shutdown")
+#     print("shuting down..")
+#     dht.shutdown()
+
 if __name__ == "__main__":
     import sys
 
-    if len(sys.argv) == 3:
-        dht = DHT(Address(sys.argv[1], sys.argv[2]))
+    if len(sys.argv) == 1:
+        dht = DHT(Address("127.0.0.1", 9010))
     else:
-        dht = DHT(Address(sys.argv[1], sys.argv[2]), Address(sys.argv[3], sys.argv[4]))
+        dht = DHT(Address("127.0.0.1", sys.argv[1]), Address("127.0.0.1", sys.argv[2]))
     input("Press any key to shutdown")
     print("shuting down..")
     dht.shutdown()

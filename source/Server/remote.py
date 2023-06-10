@@ -127,6 +127,7 @@ class Remote(object):
 
     @requires_connection
     def set_agent_remote(self, request):
+        print("set_agent_remote")
         self.send(f"set_agent {request}")
         response = json.loads(self.recv())
         return str(response)
@@ -153,7 +154,8 @@ class Remote(object):
         return str(response)
 
     @requires_connection
-    def delete_agent_remote(self, id_api):
-        self.send(f"delete {id_api}")
+    def delete_agent_remote(self, id_api, api_name):
+        print("delete_agent_remote")
+        self.send(f"delete {id_api} {api_name}")
         response = self.recv()
         return response

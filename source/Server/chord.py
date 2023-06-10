@@ -1,5 +1,3 @@
-#!/bin/python
-from operator import le
 import os
 import sys
 import json
@@ -133,7 +131,7 @@ class Local(object):
         self.daemons_["fix_fingers"] = Daemon(self, "fix_fingers")
         self.daemons_["stabilize"] = Daemon(self, "stabilize")
         self.daemons_["update_successors"] = Daemon(self, "update_successors")
-        self.daemons_["distribute_data"] = Daemon(self, "distribute_data")
+        # self.daemons_["distribute_data"] = Daemon(self, "distribute_data")
         for key in self.daemons_:
             self.daemons_[key].start()
 
@@ -356,6 +354,7 @@ class Local(object):
                 result = json.dumps(self.get_successors())
 
             if command == "set_agent":
+                print("command == set_agent")
                 result = self._set(request)
 
             if command == "get_agent":
@@ -373,9 +372,11 @@ class Local(object):
                 print(result)
 
             if command == "delete":
-                api_id = request
+                tmp = request.split()
+                api_id = tmp[0]
+                api_name = tmp[1]
                 print(api_id, "en delete")
-                result = self._delete_agent(api_id)
+                result = self._delete_agent(api_id, api_name)
                 print(result, "!!!")
 
             # or it could be a user specified operation
@@ -404,9 +405,11 @@ class Local(object):
 
         if succ.address_ != self.address_:
             result = succ.set_agent_remote(json.dumps({"key": key, "value": value}))
-            return result
         else:
-            return succ._set(json.dumps({"key": key, "value": value}))
+            result = succ._set(json.dumps({"key": key, "value": value}))
+        print("VOY A HACER REPLICACION")
+        self.replication_set(key, value)
+        return result
 
     def get_agent(self, id: str, api_name: str):
         succ = self.find_successor(id)
@@ -451,9 +454,11 @@ class Local(object):
 
     def delete_agent(self, id_api, id, api_name):
         succ = self.find_successor(id)
+        #!va aqui
+        self.replication_delete(id_api, api_name)
         if succ.address_ != self.address_:
             print("pal remote")
-            result = succ.delete_agent_remote(id_api)
+            result = succ.delete_agent_remote(id_api, api_name)
         else:
             result = succ._delete_agent(id_api, api_name)
         return result
@@ -522,10 +527,13 @@ class Local(object):
 
     def set(self, key, value):
         # eventually it will distribute the keys
+        print("Comprobar el data de este nodo")
+        print(self.data_.keys())
         if key in self.data_.keys():
             return "This agent already exist"
         else:
             self.data_[key] = value
+            print("antes de llamar al register api")
             return self.agnt_plat_server.register_api(key, value)
 
     @repeat_and_sleep(5)
@@ -554,6 +562,38 @@ class Local(object):
             del self.data_[key]
         # Keep calling us
         return True
+
+    def replication_set(self, key, value):
+        for i in range(0, REPLICATION_FACTOR):
+            # sino soy yo mismo, tengo q replicar.
+            print(type(self.successors_[i]), "Tipo de successors_[i]")
+            print(self.successors_[i].address_)
+            print(self.address_)
+            if self.successors_[i].address_ != self.address_:
+                result = self.successors_[i].set_agent_remote(
+                    json.dumps({"key": key, "value": value})
+                )
+                return result
+            else:  # si me encuentro  significa que los siguientes a mi ya los vi antes
+                break
+
+    def replication_delete(self, id_api, api_name):
+        for i in range(0, REPLICATION_FACTOR):
+            # sino soy yo mismo, tengo qu eliminar las replicas.
+            print("VOY A BORRAR UNA LLAVE< TNGO Q BORRARLA DE MIS SUCESORES TMB")
+            print(type(self.successors_[i]), "Tipo de successors_[i]")
+            print(self.successors_[i].address_)
+            print(self.address_)
+            if self.successors_[i].address_ != self.address_:
+                result = self.successors_[i].delete_agent_remote(id_api, api_name)
+                return result
+            else:  # si me encuentro  significa que los siguientes a mi ya los vi antes
+                break
+
+    def replication_get(self):
+        pass
+
+    # replication cuando los nodos cambien sus sucesores, tanto x eliminacion de nodos, como x insercion d otros
 
 
 if __name__ == "__main__":
