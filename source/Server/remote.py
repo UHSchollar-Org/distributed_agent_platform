@@ -139,12 +139,11 @@ class Remote(object):
 
     @requires_connection
     def get_all_agents(self):
-        print("GET ALL AGENTS IN REMOTE")
+        print("EN EL REMOTE GETALLAGENTS")
         self.send(f"get_all_agents")
-        print("DESPUES DE ENVIAR GET_ALL_AGENTS EN REMOTE")
-        response = json.loads(self.recv())
-        print("RESPONSE DE REMOTE", response)
-        return str(response)
+        response = self.recv()
+        print("EL RESPONSE DE REMOTE", response)
+        return response
 
     @requires_connection
     def use_agent_remote(self, api_name, endpoint, params=None):
@@ -155,5 +154,11 @@ class Remote(object):
     @requires_connection
     def delete_agent_remote(self, id_api):
         self.send(f"delete {id_api}")
+        response = self.recv()
+        return response
+    
+    @requires_connection
+    def get_all_descriptions(self):
+        self.send('get_all_desc')
         response = self.recv()
         return response

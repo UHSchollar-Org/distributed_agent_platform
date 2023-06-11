@@ -79,9 +79,9 @@ class DHT(object):
                 print(result)
 
             if command == "SHOW_ALL_AGENTS":
-                print("COMMAND SHOW ALL AGENTS")
+                print("EN SHOW ALL EN COMMAND DHT")
                 result = self.local_.show_agents()
-                print("DESPUES DE SHOW ALL AGENTS EN DHT")
+                print("EL RESULT DE DHT", result)
                 print(result)
 
             if command == "DELETE":
@@ -94,6 +94,12 @@ class DHT(object):
 
                 print(result, type(result))
 
+            if command == "GET_FUNC":
+                print("ENTRANDO A GET_FUNC EN DHT")
+                result = self.local_.get_agent_functionality(request)
+                print("RESULTADO OBTENIDO EN GET_FUNC EN DHT")
+                print(result)
+            
             # if command == "FINISH":
             #     print(:)
             #     conn.close()
@@ -113,10 +119,12 @@ def create_dht(lport):
 if __name__ == "__main__":
     import sys
 
-    if len(sys.argv) == 3:
-        dht = DHT(Address(sys.argv[1], sys.argv[2]))
+    if len(sys.argv) == 2:
+        dht = DHT(Address(socket.gethostbyname(socket.gethostname()), sys.argv[1]))
+    elif len(sys.argv) == 4:
+        dht = DHT(Address(socket.gethostbyname(socket.gethostname()), sys.argv[1]), Address(sys.argv[2], sys.argv[3]))
     else:
-        dht = DHT(Address(sys.argv[1], sys.argv[2]), Address(sys.argv[3], sys.argv[4]))
+        print("Invalid number of arguments received")
     input("Press any key to shutdown")
     print("shuting down..")
     dht.shutdown()

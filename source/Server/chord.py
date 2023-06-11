@@ -363,9 +363,7 @@ class Local(object):
                 result = self._get(json.dumps({"key": api_name}))
 
             if command == "get_all_agents":
-                print("COMMAND GET ALL AGENTS EN CHORD")
                 result = json.dumps({"agents": list(self.data_.keys())})
-                print("RESULT DEL COMMAND", result)
 
             if command == "use_agent":
                 tmp = request.split(" ")
@@ -374,9 +372,15 @@ class Local(object):
 
             if command == "delete":
                 api_id = request
-                print(api_id, "en delete")
                 result = self._delete_agent(api_id)
-                print(result, "!!!")
+            
+            if command == "get_all_desc":
+                result = []
+                
+                for key in self.data_:
+                    result.append((key, self.data_[key], self.get_description(key)))
+                
+                result = json.dumps({"descs": result[:-1]})
 
             # or it could be a user specified operation
             for t in self.command_:
@@ -424,29 +428,26 @@ class Local(object):
             return result
         else:
             return succ._use_agent(api_name, endpoint, params)
-
+            
     def show_agents(self):
-        print("SHOW AGENTS IN CHORD")
+        print("EN EL SHOW AGENTS EN CHORD>PY")
         agents = []
         current_node = self
-        print("NODO INICIAL", current_node)
-        print("ID DEL NODO INICIAL", current_node.id())
+    
         agents = agents + list(current_node.data_.keys())
+        print("AGENTS DESPUES DE AÑADIR LOS PRIMEROS", agents)
         current_node = current_node.successor()
-        print("SEGUNDO NODO", current_node)
-        print("ID DEL SEGUNDO NODO", current_node.id())
+        print("SUCESOR", current_node)
+        
         while current_node.address_ != self.address_:
-            print("SUCCESSOR DEL NODO EN EL WHILE EN SHOW AGENTS CHORD", current_node)
-            print("DENTRO DEL WHILE SHOW AGENTS")
-            response = current_node.get_all_agents()
-            print("RESPONSE DEL MENSAJE DEL WHILE", response)
-            agents = agents + response.split()
-            print("AGENTES ACTUALIZADOS", agents)
-
+            print("DENTRO DEL WHILE")
+            response = json.loads(current_node.get_all_agents())
+            print("DENTRO DEL WHILE EN SHOW ALL, EL RESPONSE", response)
+            print("DENTRO DEL WHILE EN SHOW ALL, EL RESPONSE['agents']", response['agents'])
+            agents = agents + response['agents']
             current_node = current_node.successor()
 
         agents.sort()
-        print("AGENTES FINALES ORDENADOS", agents)
         return json.dumps(agents)
 
     def delete_agent(self, id_api, id, api_name):
@@ -466,19 +467,57 @@ class Local(object):
             result = "Invalid api_name"
         return result
 
-    def get_agent_functionality(self, descripcion: str):
-        pass
-
+    def get_description(self, key):
+        desc = []
+        
+        for endpoint in self.data_[key]:
+            endpoint_desc = endpoint[4]
+            desc.append(endpoint_desc)
+        
+        return " ".join(desc)
+            
+    def get_agent_functionality(self, description: str):
+        print("ENTRANDO A GET_AGENT_FUNCTIONALITY")
+        agents = []
+        current_node = self
+        
+        for key in current_node.data_:
+            print("KEY", key)
+            print("DESCRIPTION TO FIND", description)
+            print("DESCRIPCION DEL KEY", current_node.get_description(key))
+            sim = get_similarity(description, current_node.get_description(key))
+            print("SIMILITUD", sim)
+            if sim >= SIMILARITY_THRESHOLD:
+                agents.append((current_node.data_[key], sim))
+        
+        current_node = current_node.successor()
+        
+        while current_node.address_ != self.address_:
+            response = json.loads(current_node.get_all_descriptions())
+            
+            for desc in response['descs']:
+                key_desc = desc[2]
+                data = desc[1]
+                key = desc[0] 
+                print("LA DATA", data)
+                sim = get_similarity(description, key_desc)
+                if sim >= SIMILARITY_THRESHOLD:
+                    agents.append((data, sim))
+            
+            current_node = current_node.successor()
+        
+        agents.sort(reverse= True, key= lambda x: x[1])
+        agents = [item[0] for item in agents]
+        print("AGENTES ORDENADOS", agents)
+        return json.dumps(agents[:10])
+                 
     def _use_agent(self, api_name, endpoint, params):
         result = self.agnt_plat_server.comunicate_with_api(api_name, endpoint, params)
         return result
 
     def _get(self, request):
         try:
-            print("EN EL _GET DE CHORD")
-            print("REQUEST", request)
             data = json.loads(request)
-            print("DATA", data)
             # we have the key
             return json.dumps({"status": "ok", "data": self.get(data["key"])})
         except Exception:
@@ -493,6 +532,7 @@ class Local(object):
             new_.append(x.split(" ", maxsplit=4))
         key = data["key"]
         api_id = self.set(key, new_)
+        print("EL VALUE", new_)
         # TODO hacer q se llame a la plataforma, guardar la api, generar un id y asociar l id a la api
         return json.dumps({"status": "ok", "api_id": api_id})
 
