@@ -655,7 +655,12 @@ class Local(object):
             for i in range(0, min(len(self.successors_), REPLICATION_FACTOR)):
                 # sino soy yo mismo, tengo q replicar.
                 if self.successors_[i].address_ != self.address_:
-                    result = self.successors_[i].send_all_keys_remote(json.dumps(dicc))
+                    #replicar mis llaves solamente
+                    for key in dicc:
+                        if self.find_successor(hash(key)).address_ == self.address_:
+                            result = self.successors_[i].set_agent_remote(json.dumps({"key": key, "value": dicc[key]}))
+                    
+                    
                     # print(result, "Esta es la respuesta del send_all_keyss")
                     # return result
                 else:  # si me encuentro  significa que los siguientes a mi ya los vi antes
