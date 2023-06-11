@@ -1,7 +1,10 @@
+from cgitb import reset
+from http.client import responses
 import json
 import socket
 import threading
 import hashlib
+from urllib import response
 from address import Address
 from settings import SIZE, LOGSIZE
 from network import *
@@ -157,5 +160,11 @@ class Remote(object):
     def delete_agent_remote(self, id_api, api_name):
         print("delete_agent_remote")
         self.send(f"delete {id_api} {api_name}")
+        response = self.recv()
+        return response
+
+    @requires_connection
+    def send_all_keys_remote(self, dicc):
+        self.send(f"send_all_keys {dicc}")
         response = self.recv()
         return response

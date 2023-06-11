@@ -5,6 +5,7 @@ import socket
 import threading
 import random
 import time
+from Aux_ import check_apis_inrange, check_equal_list
 import utils
 from address import Address, inrange
 from remote import Remote
@@ -82,17 +83,18 @@ class Local(object):
         # crear el archivo de las api y los api_id
         self.file_name = os.path.join("Data", str(utils.hash(str(self.address_))))
         # load Data
-        self.load_data()
+        self.create_files()
         # plataforma agente
         self.agnt_plat_server = AgentPlataform(self.file_name)
 
-    def load_data(self):
+    def create_files(self):
         if os.path.exists(self.file_name + ".json"):
             with open(self.file_name + ".json", "r") as my_file:
                 data_json = json.load(my_file)
                 if len(data_json) != 0:
                     for x in data_json.keys():
                         self.data_[x] = data_json[x]
+                # check_apis_inrange(data_json)
         else:
             file = open(self.file_name + ".json", "w")
             datos = {}
@@ -233,8 +235,11 @@ class Local(object):
     @repeat_and_sleep(UPDATE_SUCCESSORS_INT)
     @retry_on_socket_error(UPDATE_SUCCESSORS_RET)
     def update_successors(self):
+        previous_succs = self.successors_
+        # print(previous_succs)
         self.log("update successor")
         suc = self.successor()
+        successors = None
         # if we are not alone in the ring, calculate
         if suc.id() != self.id():
             successors = [suc]
@@ -243,6 +248,13 @@ class Local(object):
                 successors += suc_list
             # if everything worked, we update
             self.successors_ = successors
+            # si hubo cambios en los sucesores
+            if (
+                not check_equal_list(previous_succs, successors) and successors != None
+            ):  # here
+                print("ENCONTRE UN NUEVO SUCSOR -> REPLICAR")
+                self.replication_new_succ()
+        # print(successors)
         return True
 
     def get_successors(self):
@@ -379,6 +391,12 @@ class Local(object):
                 result = self._delete_agent(api_id, api_name)
                 print(result, "!!!")
 
+            if command == "send_all_keys":
+                data = json.loads(request)
+                for key in data.keys():
+                    # value = list_to_string(data[key])
+                    self._set(json.dumps({"key": key, "value": data[key]}), True)
+
             # or it could be a user specified operation
             for t in self.command_:
                 if command == t[0]:
@@ -404,10 +422,11 @@ class Local(object):
         succ = self.find_successor(id)
 
         if succ.address_ != self.address_:
+            print("distintas address")
             result = succ.set_agent_remote(json.dumps({"key": key, "value": value}))
         else:
+            print("dentro del else")
             result = succ._set(json.dumps({"key": key, "value": value}))
-        print("VOY A HACER REPLICACION")
         self.replication_set(key, value)
         return result
 
@@ -454,13 +473,12 @@ class Local(object):
 
     def delete_agent(self, id_api, id, api_name):
         succ = self.find_successor(id)
-        #!va aqui
-        self.replication_delete(id_api, api_name)
         if succ.address_ != self.address_:
-            print("pal remote")
             result = succ.delete_agent_remote(id_api, api_name)
         else:
             result = succ._delete_agent(id_api, api_name)
+        #!va aqui
+        self.replication_delete(id_api, api_name)
         return result
 
     def _delete_agent(self, id_api: str, api_name):
@@ -490,10 +508,15 @@ class Local(object):
             # key not present
             return json.dumps({"status": "failed"})
 
-    def _set(self, request):
+    def _set(self, request, need_split=None):
         # try:
-        new_ = []
         data = json.loads(request)
+        if need_split == True:
+            print("Utilizando el new _set con steroides")
+            print(data)
+            self.set(data["key"], data["value"])
+            return "Api Guardada por replicacion."
+        new_ = []
         for x in data["value"]:
             new_.append(x.split(" ", maxsplit=4))
         key = data["key"]
@@ -564,34 +587,51 @@ class Local(object):
         return True
 
     def replication_set(self, key, value):
-        for i in range(0, REPLICATION_FACTOR):
-            # sino soy yo mismo, tengo q replicar.
-            print(type(self.successors_[i]), "Tipo de successors_[i]")
-            print(self.successors_[i].address_)
-            print(self.address_)
-            if self.successors_[i].address_ != self.address_:
-                result = self.successors_[i].set_agent_remote(
-                    json.dumps({"key": key, "value": value})
-                )
-                return result
-            else:  # si me encuentro  significa que los siguientes a mi ya los vi antes
-                break
+        succ = self.successor()
+        if succ.id() != self.id():
+            for i in range(0, REPLICATION_FACTOR):
+                # sino soy yo mismo, tengo q replicar.
+                if self.successors_[i].address_ != self.address_:
+                    result = self.successors_[i].set_agent_remote(
+                        json.dumps({"key": key, "value": value})
+                    )
+                    # return result
+                else:  # si me encuentro  significa que los siguientes a mi ya los vi antes
+                    break
 
     def replication_delete(self, id_api, api_name):
         for i in range(0, REPLICATION_FACTOR):
             # sino soy yo mismo, tengo qu eliminar las replicas.
-            print("VOY A BORRAR UNA LLAVE< TNGO Q BORRARLA DE MIS SUCESORES TMB")
-            print(type(self.successors_[i]), "Tipo de successors_[i]")
-            print(self.successors_[i].address_)
-            print(self.address_)
             if self.successors_[i].address_ != self.address_:
                 result = self.successors_[i].delete_agent_remote(id_api, api_name)
                 return result
             else:  # si me encuentro  significa que los siguientes a mi ya los vi antes
                 break
 
+    def replication_new_succ(self):
+        dicc = self.load_data()
+        print(dicc, "estoy dentro de replication_new_scc")
+        if len(self.successors_) > 0 and len(dicc) > 0:
+            for i in range(0, min(len(self.successors_), REPLICATION_FACTOR)):
+                # sino soy yo mismo, tengo q replicar.
+                if self.successors_[i].address_ != self.address_:
+                    result = self.successors_[i].send_all_keys_remote(json.dumps(dicc))
+                    # print(result, "Esta es la respuesta del send_all_keyss")
+                    # return result
+                else:  # si me encuentro  significa que los siguientes a mi ya los vi antes
+                    break
+
     def replication_get(self):
         pass
+
+    def load_data(self):
+        dicc = self.data_
+        return dicc
+
+    def save_all_keys(self, dicc):
+        for key in dicc.keys():
+            if key not in self.data_.keys():
+                self._set()  # como pongo todas las llaves, y verificar que el objeto request sea un dicc y no un string raro que parece dicc
 
     # replication cuando los nodos cambien sus sucesores, tanto x eliminacion de nodos, como x insercion d otros
 

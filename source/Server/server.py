@@ -119,7 +119,6 @@ class AgentPlataform(object):
             return "Agente eliminado con exito!"
 
     def generate_id(self, api):
-        print("11111111111111111111111111111111111")
         namespace_oid = uuid.NAMESPACE_OID
         unique_id = uuid.uuid5(namespace_oid, api)
         return str(unique_id)
