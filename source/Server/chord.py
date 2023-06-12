@@ -5,7 +5,7 @@ import socket
 import threading
 import random
 import time
-from Aux_ import check_apis_inrange, check_equal_list
+from Aux_ import check_equal_list
 import utils
 from address import Address, inrange
 from remote import Remote
@@ -93,8 +93,19 @@ class Local(object):
                 data_json = json.load(my_file)
                 if len(data_json) != 0:
                     for x in data_json.keys():
-                        self.data_[x] = data_json[x]
-                # check_apis_inrange(data_json)
+                        id_api = utils.hash(x)
+                        print(id_api, "ppppppppppppppppppp")
+                        succ = self.find_successor(id_api)
+                        print(succ, "mis sucesor")
+                        print(self.address_, "yo")
+                        if succ.address_ == self.address_:
+                            print("ooooooooooooooooooo")
+                            self.data_[x] = data_json[x]
+                        else:
+                            # mandar un mensaj con la llave al que le toca
+                            succ.set_agent_remote(
+                                json.dumps({"key": x, "value": data_json[x]})
+                            )
         else:
             file = open(self.file_name + ".json", "w")
             datos = {}
@@ -386,13 +397,13 @@ class Local(object):
                 api_id = tmp[0]
                 api_name = tmp[1]
                 result = self._delete_agent(api_id, api_name)
-            
+
             if command == "get_all_desc":
                 result = []
-                
+
                 for key in self.data_:
                     result.append((key, self.data_[key], self.get_description(key)))
-                
+
                 result = json.dumps({"descs": result[:-1]})
 
             if command == "send_all_keys":
@@ -450,23 +461,26 @@ class Local(object):
             return result
         else:
             return succ._use_agent(api_name, endpoint, params)
-            
+
     def show_agents(self):
         print("EN EL SHOW AGENTS EN CHORD>PY")
         agents = []
         current_node = self
-    
+
         agents = agents + list(current_node.data_.keys())
         print("AGENTS DESPUES DE AÑADIR LOS PRIMEROS", agents)
         current_node = current_node.successor()
         print("SUCESOR", current_node)
-        
+
         while current_node.address_ != self.address_:
             print("DENTRO DEL WHILE")
             response = json.loads(current_node.get_all_agents())
             print("DENTRO DEL WHILE EN SHOW ALL, EL RESPONSE", response)
-            print("DENTRO DEL WHILE EN SHOW ALL, EL RESPONSE['agents']", response['agents'])
-            agents = agents + response['agents']
+            print(
+                "DENTRO DEL WHILE EN SHOW ALL, EL RESPONSE['agents']",
+                response["agents"],
+            )
+            agents = agents + response["agents"]
             current_node = current_node.successor()
 
         agents.sort()
@@ -492,18 +506,18 @@ class Local(object):
 
     def get_description(self, key):
         desc = []
-        
+
         for endpoint in self.data_[key]:
             endpoint_desc = endpoint[4]
             desc.append(endpoint_desc)
-        
+
         return " ".join(desc)
-            
+
     def get_agent_functionality(self, description: str):
         print("ENTRANDO A GET_AGENT_FUNCTIONALITY")
         agents = []
         current_node = self
-        
+
         for key in current_node.data_:
             print("KEY", key)
             print("DESCRIPTION TO FIND", description)
@@ -512,28 +526,28 @@ class Local(object):
             print("SIMILITUD", sim)
             if sim >= SIMILARITY_THRESHOLD:
                 agents.append((current_node.data_[key], sim))
-        
+
         current_node = current_node.successor()
-        
+
         while current_node.address_ != self.address_:
             response = json.loads(current_node.get_all_descriptions())
-            
-            for desc in response['descs']:
+
+            for desc in response["descs"]:
                 key_desc = desc[2]
                 data = desc[1]
-                key = desc[0] 
+                key = desc[0]
                 print("LA DATA", data)
                 sim = get_similarity(description, key_desc)
                 if sim >= SIMILARITY_THRESHOLD:
                     agents.append((data, sim))
-            
+
             current_node = current_node.successor()
-        
-        agents.sort(reverse= True, key= lambda x: x[1])
+
+        agents.sort(reverse=True, key=lambda x: x[1])
         agents = [item[0] for item in agents]
         print("AGENTES ORDENADOS", agents)
         return json.dumps(agents[:10])
-                 
+
     def _use_agent(self, api_name, endpoint, params):
         result = self.agnt_plat_server.comunicate_with_api(api_name, endpoint, params)
         return result
