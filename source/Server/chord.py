@@ -5,7 +5,7 @@ import socket
 import threading
 import random
 import time
-from Aux_ import check_equal_list
+from Aux_ import check_equal_list, list_to_string
 import utils
 from address import Address, inrange
 from remote import Remote
@@ -104,7 +104,7 @@ class Local(object):
                         else:
                             # mandar un mensaj con la llave al que le toca
                             succ.set_agent_remote(
-                                json.dumps({"key": x, "value": data_json[x]})
+                                json.dumps({"key": x, "value": list_to_string(data_json[x])})
                             )
         else:
             file = open(self.file_name + ".json", "w")
@@ -442,7 +442,7 @@ class Local(object):
         else:
             print("dentro del else")
             result = succ._set(json.dumps({"key": key, "value": value}))
-        self.replication_set(key, value)
+        #self.replication_set(key, value)
         return result
 
     def get_agent(self, id: str, api_name: str):
@@ -561,17 +561,17 @@ class Local(object):
             # key not present
             return json.dumps({"status": "failed"})
 
-    def _set(self, request, need_split=None):
+    def _set(self, request):
         # try:
         data = json.loads(request)
-        if need_split == True:
-            print("Utilizando el new _set con steroides")
-            print(data)
-            self.set(data["key"], data["value"])
-            return "Api Guardada por replicacion."
+        self.replication_set(data['key'], data['value'])
+        splited_value = data['value'].split('-')
+        data['value'] = splited_value
+        
         new_ = []
         for x in data["value"]:
             new_.append(x.split(" ", maxsplit=4))
+            
         key = data["key"]
         api_id = self.set(key, new_)
         print("EL VALUE", new_)
@@ -641,17 +641,22 @@ class Local(object):
         return True
 
     def replication_set(self, key, value):
-        succ = self.successor()
-        if succ.id() != self.id():
-            for i in range(0, REPLICATION_FACTOR):
-                # sino soy yo mismo, tengo q replicar.
-                if self.successors_[i].address_ != self.address_:
-                    result = self.successors_[i].set_agent_remote(
-                        json.dumps({"key": key, "value": value})
-                    )
-                    # return result
-                else:  # si me encuentro  significa que los siguientes a mi ya los vi antes
-                    break
+        print("EN REPLICATION SET de", self)
+        
+        #succ = self.successor()
+        # print("EL SUCESOR')
+        #if succ.id() != self.id():
+        if self.find_successor(hash(key)).address_ != self.address_:
+            return
+        for i in range(0, REPLICATION_FACTOR):
+            # sino soy yo mismo, tengo q replicar.
+            if self.successors_[i].address_ != self.address_:
+                result = self.successors_[i].set_agent_remote(
+                    json.dumps({"key": key, "value":value})
+                )
+                # return result
+            else:  # si me encuentro  significa que los siguientes a mi ya los vi antes
+                break
 
     def replication_delete(self, id_api, api_name):
         for i in range(0, REPLICATION_FACTOR):
@@ -669,12 +674,28 @@ class Local(object):
             for i in range(0, min(len(self.successors_), REPLICATION_FACTOR)):
                 # sino soy yo mismo, tengo q replicar.
                 if self.successors_[i].address_ != self.address_:
+                    keys_to_delete = []
                     #replicar mis llaves solamente
                     for key in dicc:
-                        if self.find_successor(hash(key)).address_ == self.address_:
-                            result = self.successors_[i].set_agent_remote(json.dumps({"key": key, "value": dicc[key]}))
+                        print("LA KEY", key)
+                        print("EL DUE^NO DE LA KEY", self.find_successor(hash(key)))
+                        key_succ = self.find_successor(hash(key))
+                        if key_succ.address_ == self.address_:
+                            result = self.successors_[i].set_agent_remote(json.dumps({"key": key, "value": list_to_string(dicc[key])}))
+                        else:
+                            result = key_succ.set_agent_remote(json.dumps({"key": key, "value": list_to_string(dicc[key])}))
+                            keys_to_delete.append(key)
+                            
+                            with open(self.file_name + '.json', "r") as archive:
+                                data = json.load(archive)
+                                data.pop(key)
+                                
+                            with open(self.file_name + '.json', "w") as archive:
+                                json.dump(data, archive)
                     
-                    
+                    for key in keys_to_delete:
+                        self.data_.pop(key)
+                            
                     # print(result, "Esta es la respuesta del send_all_keyss")
                     # return result
                 else:  # si me encuentro  significa que los siguientes a mi ya los vi antes

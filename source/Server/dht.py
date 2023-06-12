@@ -58,7 +58,7 @@ class DHT(object):
                 tmp = request.split(":", maxsplit=1)
                 id = utils.hash(tmp[0])
                 print(f"ID: {id}")
-                result = self.local_.set_agent(id, key=tmp[0], value=tmp[1].split("-"))
+                result = self.local_.set_agent(id, key=tmp[0], value=tmp[1])
                 print(result)
 
             if command == "GET_AGENT":
