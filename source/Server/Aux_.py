@@ -21,12 +21,12 @@ def check_equal_list(list1, list2):
     return True
 
 
-def check_apis_inrange(data_json, node_id, id_pred):
-    for key in data_json.keys():
-        api_id = utils.hash(key)
-        if not inrange(api_id, node_id, id_pred):
-            data_json.pop(key)
-    # testear
+# def check_apis_inrange(data_json, ):
+#     for key in data_json.keys():
+#         api_id = utils.hash(key)
+#         if not inrange(api_id, node_id, id_pred):
+#             data_json.pop(key)
+# testear
 
 
 # def list_to_string(list):
