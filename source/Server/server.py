@@ -100,8 +100,6 @@ class AgentPlataform(object):
         # TODO testing
         with open(self.apis_id, "r") as archivo:
             data = json.load(archivo)
-            print(data)
-            print(id)
         if id not in data.keys():
             return "Error al eliminar, rectifique el id y el nombre del agente"
         else:
@@ -114,6 +112,7 @@ class AgentPlataform(object):
             with open(self.apis, "r") as archivo:
                 data = json.load(archivo)
                 data.pop(api_name)
+                print("BORRE LA API del json,", api_name)
             with open(self.apis, "w") as archivo:
                 json.dump(data, archivo)
             return "Agente eliminado con exito!"

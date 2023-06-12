@@ -1,6 +1,4 @@
-from cgi import print_arguments
-from traceback import print_tb
-from chord import Local, Daemon, repeat_and_sleep, inrange
+from chord import Local, Daemon
 from address import Address
 import json
 import socket
@@ -40,7 +38,6 @@ class DHT(object):
         self.socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket_.bind((self.address.ip, int(self.address.port)))
         self.socket_.listen(10)
-        print("Escuchando en el puerto: ", self.address.port)
         while 1:
             try:
                 conn, addr = self.socket_.accept()
@@ -86,20 +83,17 @@ class DHT(object):
 
             if command == "DELETE":
                 tmp = request.split(":")
-                print(tmp, " en DELETE")
                 if len(tmp) != 2:
                     result = "Error de solicitud"
                 id = utils.hash(tmp[0])
                 result = self.local_.delete_agent(tmp[1], id, tmp[0])
-
-                print(result, type(result))
 
             if command == "GET_FUNC":
                 print("ENTRANDO A GET_FUNC EN DHT")
                 result = self.local_.get_agent_functionality(request)
                 print("RESULTADO OBTENIDO EN GET_FUNC EN DHT")
                 print(result)
-            
+
             # if command == "FINISH":
             #     print(:)
             #     conn.close()
@@ -133,9 +127,13 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         dht = DHT(Address(socket.gethostbyname(socket.gethostname()), sys.argv[1]))
     elif len(sys.argv) == 4:
-        dht = DHT(Address(socket.gethostbyname(socket.gethostname()), sys.argv[1]), Address(sys.argv[2], sys.argv[3]))
+        dht = DHT(
+            Address(socket.gethostbyname(socket.gethostname()), sys.argv[1]),
+            Address(sys.argv[2], sys.argv[3]),
+        )
     else:
         print("Invalid number of arguments received")
     input("Press any key to shutdown")
+    print()
     print("shuting down..")
     dht.shutdown()

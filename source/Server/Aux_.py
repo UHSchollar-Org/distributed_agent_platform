@@ -37,5 +37,5 @@ def list_to_string(list):
             result += lis_string + " "
         result += "-"
     result = result[: len(result) - 2]
-    print(result, "*****************")
+    # print(result, "*****************")
     return result
