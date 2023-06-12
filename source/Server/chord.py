@@ -659,7 +659,7 @@ class Local(object):
                 break
 
     def replication_delete(self, id_api, api_name):
-        for i in range(0, REPLICATION_FACTOR):
+        for i in range(0, min(REPLICATION_FACTOR, len(self.successors_))):
             # sino soy yo mismo, tengo qu eliminar las replicas.
             if self.successors_[i].address_ != self.address_:
                 result = self.successors_[i].delete_agent_remote(id_api, api_name)
