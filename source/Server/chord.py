@@ -5,7 +5,7 @@ import socket
 import threading
 import random
 import time
-from Aux_ import check_equal_list, list_to_string
+from Aux_ import check_equal_list
 import utils
 from address import Address, inrange
 from remote import Remote
@@ -103,9 +103,8 @@ class Local(object):
                             self.data_[x] = data_json[x]
                         else:
                             # mandar un mensaj con la llave al que le toca
-                            value = list_to_string(data_json[x])
                             succ.set_agent_remote(
-                                json.dumps({"key": x, "value": value})
+                                json.dumps({"key": x, "value": data_json[x]})
                             )
         else:
             file = open(self.file_name + ".json", "w")

@@ -29,13 +29,13 @@ def check_equal_list(list1, list2):
 # testear
 
 
-def list_to_string(list):
-    print(list)
-    result = ""
-    for x in list:
-        for lis_string in x:
-            result += lis_string + " "
-        result += "-"
-    result = result[:-1]
-    print(result, "*****************")
-    return result
+# def list_to_string(list):
+#     print(list)
+#     result = ""
+#     for x in list:
+#         for lis_string in x:
+#             result += lis_string + " "
+#         result += "-"
+#     result = result[: len(result) - 1]
+#     print(result, "*****************")
+#     return result
