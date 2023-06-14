@@ -46,7 +46,7 @@ class AgentPlataform(object):
         ~~~~~~~
             _type_: _description_
         """
-        print("Se llamo al metodo de comunicarse con la api")
+        # print("Se llamo al metodo de comunicarse con la api")
         with open(self.apis, "r") as archivo:
             data = json.load(archivo)
         if api_name in data.keys():
@@ -82,8 +82,6 @@ class AgentPlataform(object):
     def _create_params_url(self, website, args):
         args_ = args[1 : len(args) - 1]
         args_ = args_.split(sep=",")
-        print(args_)
-        print(website)
         url = website + "/".join(str(arg) for arg in args_)
         return url
 
@@ -112,7 +110,7 @@ class AgentPlataform(object):
             with open(self.apis, "r") as archivo:
                 data = json.load(archivo)
                 data.pop(api_name)
-                print("BORRE LA API del json,", api_name)
+                # print("BORRE LA API del json,", api_name)
             with open(self.apis, "w") as archivo:
                 json.dump(data, archivo)
             return "Agente eliminado con exito!"

@@ -127,7 +127,7 @@ class Local(object):
 
     def shutdown(self):
         self.shutdown_ = True
-        self.socket_.shutdown(socket.SHUT_RDWR)
+        # self.socket_.shutdown(socket.SHUT_RDWR)
         self.socket_.close()
 
         # logging function
@@ -171,7 +171,7 @@ class Local(object):
     @repeat_and_sleep(STABILIZE_INT)
     @retry_on_socket_error(STABILIZE_RET)
     def stabilize(self):
-        self.log("stabilize")
+        print("successor en estanilizar")
         suc = self.successor()
         # We may have found that x is our new successor iff
         # - x = pred(suc(n))
@@ -190,6 +190,7 @@ class Local(object):
         ):
             self.finger_[0] = x
         # We notify our new successor about us
+        # print("successor en notify")
         self.successor().notify(self)
         # Keep calling us
 
@@ -246,7 +247,9 @@ class Local(object):
     @retry_on_socket_error(UPDATE_SUCCESSORS_RET)
     def update_successors(self):
         previous_succs = self.successors_
+
         self.log("update successor")
+        # print("successor en update successor")
         suc = self.successor()
         successors = None
         # if we are not alone in the ring, calculate
@@ -284,7 +287,7 @@ class Local(object):
             # si soy el duenho no la mando a borrar
             if key_succ.address_ == self.address_:
                 response = succ.delete_old_agent_remote(key)
-                print(response)
+                # print(response)
 
     def get_successors(self):
         self.log("get_successors")
@@ -321,6 +324,7 @@ class Local(object):
         if self.predecessor() and inrange(id, self.predecessor().id(1), self.id(1)):
             return self
         node = self.find_predecessor(id)
+        # print("successor en find successor")
         return node.successor()
 
     # @retry_on_socket_error(FIND_PREDECESSOR_RET)
@@ -328,8 +332,10 @@ class Local(object):
         self.log("find_predecessor")
         node = self
         # If we are alone in the ring, we are the pred(id)
+        # print("successor en find_predecessor")
         if node.successor().id() == node.id():
             return node
+
         while not inrange(id, node.id(1), node.successor().id(1)):
             node = node.closest_preceding_finger(id)
         return node
@@ -522,7 +528,7 @@ class Local(object):
         result = self.agnt_plat_server.delete_api_server(id_api)
         try:
             self.data_.pop(api_name)
-            print("BORRE LA API DE CACHE")
+            # print("BORRE LA API DE CACHE")
         except:
             result = "Invalid api_name"
         return result
@@ -649,13 +655,16 @@ class Local(object):
     def replication_delete(self, id_api, api_name):
         if self.find_successor(hash(api_name)).address_ != self.address_:
             return
-        print(self.address_, "YO SOY")
+        # print(self.address_, "YO SOY")
         for i in range(0, min(len(self.successors_), REPLICATION_FACTOR)):
             # sino soy yo mismo, tengo qu eliminar las replicas.
-            if self.successors_[i].address_ != self.address_:
-                print(self.successors_[i].address_, "EL QUE TIENE Q BORRAR")
+            if (
+                self.successors_[i].address_ != self.address_
+                and self.successors_[i].ping()
+            ):
+                # print(self.successors_[i].address_, "EL QUE TIENE Q BORRAR")
                 result = self.successors_[i].delete_agent_remote(id_api, api_name)
-                print(result)
+                # print(result)
             else:  # si me encuentro  significa que los siguientes a mi ya los vi antes
                 break
 
@@ -669,7 +678,7 @@ class Local(object):
                     for key in dicc:
                         key_succ = self.find_successor(hash(key))
                         if key_succ.address_ == self.address_:
-                            result = self.successors_[i].set_agent_remote(
+                            result = self._set(
                                 json.dumps(
                                     {"key": key, "value": list_to_string(dicc[key])}
                                 )

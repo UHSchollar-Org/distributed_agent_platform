@@ -137,3 +137,5 @@ if __name__ == "__main__":
     print()
     print("shuting down..")
     dht.shutdown()
+    sys.exit(-1)
+    print("Closed")

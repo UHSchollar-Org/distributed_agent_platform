@@ -30,7 +30,6 @@ def check_equal_list(list1, list2):
 
 
 def list_to_string(list):
-    print(list)
     result = ""
     for x in list:
         for lis_string in x:
