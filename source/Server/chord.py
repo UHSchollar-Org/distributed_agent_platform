@@ -246,12 +246,11 @@ class Local(object):
     @repeat_and_sleep(UPDATE_SUCCESSORS_INT)
     @retry_on_socket_error(UPDATE_SUCCESSORS_RET)
     def update_successors(self):
-        previous_succs = self.successors_
+        previous_succs = self.successors_.copy()
 
         self.log("update successor")
         # print("successor en update successor")
         suc = self.successor()
-        successors = None
         # if we are not alone in the ring, calculate
         if suc.id() != self.id():
             successors = [suc]
@@ -260,16 +259,15 @@ class Local(object):
                 successors += suc_list
             # if everything worked, we update
             self.successors_ = successors
+            successors_copy = successors.copy()
             # si hubo cambios en los sucesores
-            if (
-                not check_equal_list(previous_succs, successors) and successors != None
-            ):  # here
+            if not check_equal_list(previous_succs, successors_copy):  # here
                 self.replication_new_succ()
                 #!esto tmb es nuevo
                 # self.iterate_previous_successors(previous_succs, successors)
-            else:
-                # print("NO ENCONTRE NADIE NUEVO")
-                pass
+            # else:
+            #     # print("NO ENCONTRE NADIE NUEVO")
+            #     pass
         return True
 
     def iterate_previous_successors(self, previous_succs, successors):
@@ -400,6 +398,7 @@ class Local(object):
 
             if command == "set_agent":
                 result = self._set(request)
+                print(result)
 
             if command == "get_agent":
                 api_name = request
@@ -683,12 +682,12 @@ class Local(object):
                                     {"key": key, "value": list_to_string(dicc[key])}
                                 )
                             )
-                        else:
-                            result = key_succ.set_agent_remote(
-                                json.dumps(
-                                    {"key": key, "value": list_to_string(dicc[key])}
-                                )
-                            )
+                        # else:
+                        #     result = key_succ.set_agent_remote(
+                        #         json.dumps(
+                        #             {"key": key, "value": list_to_string(dicc[key])}
+                        #         )
+                        #     )
                 else:  # si me encuentro  significa que los siguientes a mi ya los vi antes
                     break
 
