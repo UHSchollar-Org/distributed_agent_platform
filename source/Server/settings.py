@@ -5,7 +5,7 @@ LOGSIZE = 8
 SIZE = 1 << LOGSIZE
 
 # successors list size (to continue operating on node failures)
-N_SUCCESSORS = 4
+N_SUCCESSORS = 2
 
 # INT = interval in seconds
 # RET = retry limit
@@ -30,3 +30,9 @@ SIMILARITY_THRESHOLD = 0.1
 REPLICATION_FACTOR = 2
 
 SIMILARITY_THRESHOLD = 0.1
+
+"""
+probe 3 nodos, puse llave replico bien,agregue otro q no debia tener la llave y no la cogio, lo borre y todo genial, agregue dos mas donde 1 tenia q tener la llave y la cogio, hay q borrarla del q ya no debe tenerla
+--------------------------------------------------
+
+"""

@@ -5,7 +5,6 @@ import socket
 import threading
 import random
 import time
-from xml.dom.pulldom import parseString
 from Aux_ import check_equal_list, list_to_string
 import utils
 from address import Address, inrange
@@ -87,6 +86,8 @@ class Local(object):
         self.create_files()
         # plataforma agente
         self.agnt_plat_server = AgentPlataform(self.file_name)
+        # --
+        self.temp_new_predecessor = None
 
     def create_files(self):
         if os.path.exists(self.file_name + ".json"):
@@ -233,6 +234,29 @@ class Local(object):
             or not self.predecessor().ping()
         ):
             self.predecessor_ = remote
+            # Aqui deberia venir, mandarle las llaves que yo tngo suyas
+            # self.send_keys_to_my_new_predecessor(remote)
+            self.temp_new_predecessor = remote
+
+    def send_keys_to_my_new_predecessor(self, remote):
+        print(self, remote)
+        print("Send keys to my new predecesor que me hizo notify")
+        dicc = self.load_data()
+        # self.update_successors()
+        if len(dicc) > 0:
+            for key in dicc:
+                print("id ", hash(key))
+                key_succ = self.find_successor(hash(key))
+                print(key_succ, "----------------")
+                print(key_succ.address_ == remote.address_)
+                if (
+                    key_succ.address_ == remote.address_
+                    and remote.address_ != self.address_
+                ):
+                    result = remote.set_agent_remote(
+                        json.dumps({"key": key, "value": list_to_string(dicc[key])})
+                    )
+                    print(result, "mande llaves a mi new pred")
 
     @repeat_and_sleep(FIX_FINGERS_INT)
     def fix_fingers(self):
@@ -255,16 +279,24 @@ class Local(object):
         if suc.id() != self.id():
             successors = [suc]
             suc_list = suc.get_successors()
+            # print(suc_list, "mi lista d sucsores")
+            # print(successors, "lista de mi [suc]")
             if suc_list and len(suc_list):
                 successors += suc_list
             # if everything worked, we update
             self.successors_ = successors
             successors_copy = successors.copy()
+
+            # sirve?
+            if self.temp_new_predecessor != None:
+                self.send_keys_to_my_new_predecessor(self.temp_new_predecessor)
+                self.temp_new_predecessor = None
+
             # si hubo cambios en los sucesores
             if not check_equal_list(previous_succs, successors_copy):  # here
                 self.replication_new_succ()
                 #!esto tmb es nuevo
-                # self.iterate_previous_successors(previous_succs, successors)
+                self.iterate_previous_successors(previous_succs, successors)
             # else:
             #     # print("NO ENCONTRE NADIE NUEVO")
             #     pass
@@ -272,20 +304,34 @@ class Local(object):
 
     def iterate_previous_successors(self, previous_succs, successors):
         for succ in previous_succs:
-            if succ not in successors:
-                # si el sucesor actual no esta en la lista nueva, entonces ya no es mi sucesor, tiene que borrar las llaves
+            node_exist = False
+            for s in successors:
+                if (
+                    succ.address_.ip == s.address_.ip
+                    and succ.address_.port == s.address_.port
+                ):
+                    node_exist = True
+            # si el sucesor actual no esta en la lista nueva, entonces ya no es mi sucesor, tiene que borrar las llaves
+            print("Se fue alguien de mi lista de sucsores", succ)
+            if not node_exist:
                 if succ.ping():  # comprobar que esta vivo
+                    print(self)
                     self.delete_old_agent(succ)
 
     #!esto es lo nuevo
     def delete_old_agent(self, succ: Remote):
+        if succ.address_ == self.address_:
+            return
+        print(f"El nodo {self} quiere que el nodo {succ} borre algo")
         my_data = self.load_data()
         for key in my_data.keys():
             key_succ = self.find_successor(hash(key))
+            print(key_succ, "//////////////")
             # si soy el duenho no la mando a borrar
             if key_succ.address_ == self.address_:
+                print("***********************")
                 response = succ.delete_old_agent_remote(key)
-                # print(response)
+                print(response, "testeo desp de borrar la llave q ya no debes tener")
 
     def get_successors(self):
         self.log("get_successors")
@@ -436,6 +482,7 @@ class Local(object):
                 key = request
                 try:
                     self.data_.pop(key)
+                    result = "Old key removed"
                 except:
                     result = "Error la llave no existe"
 
@@ -677,17 +724,11 @@ class Local(object):
                     for key in dicc:
                         key_succ = self.find_successor(hash(key))
                         if key_succ.address_ == self.address_:
-                            result = self._set(
+                            result = self.successors_[i].set_agent_remote(
                                 json.dumps(
                                     {"key": key, "value": list_to_string(dicc[key])}
                                 )
                             )
-                        # else:
-                        #     result = key_succ.set_agent_remote(
-                        #         json.dumps(
-                        #             {"key": key, "value": list_to_string(dicc[key])}
-                        #         )
-                        #     )
                 else:  # si me encuentro  significa que los siguientes a mi ya los vi antes
                     break
 
@@ -714,3 +755,14 @@ if __name__ == "__main__":
         node.predecessor_ = node
         node.successors_ = [node] * N_SUCCESSORS
         node.start()
+
+
+# a = Remote(Address("127.0.0.1", 9010))
+# b = Remote(Address("127.0.0.1", 9012))
+# c = Remote(Address("127.0.0.1", 9014))
+# d = Remote(Address("127.0.0.1", 9016))
+
+# xx = [a, b, c, d]
+
+# z = Remote(Address("127.0.0.1", 9010))
+# print(z in xx)

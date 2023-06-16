@@ -1,9 +1,6 @@
-from cgitb import reset
-from http.client import responses
 import json
 import socket
 import threading
-import hashlib
 from urllib import response
 from address import Address
 from settings import SIZE, LOGSIZE
