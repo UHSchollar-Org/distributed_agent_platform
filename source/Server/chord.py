@@ -241,8 +241,6 @@ class Local(object):
             self.temp_new_predecessor = remote
 
     def send_keys_to_my_new_predecessor(self, remote):
-        print(self, remote)
-        print("Send keys to my new predecesor que me hizo notify")
         dicc = self.load_data()
         # self.update_successors()
         if len(dicc) > 0:
@@ -258,7 +256,6 @@ class Local(object):
                     result = remote.set_agent_remote(
                         json.dumps({"key": key, "value": list_to_string(dicc[key])})
                     )
-                    print(result, "mande llaves a mi new pred")
 
     @repeat_and_sleep(FIX_FINGERS_INT)
     def fix_fingers(self):
@@ -317,7 +314,6 @@ class Local(object):
                 ):
                     node_exist = True
             # si el sucesor actual no esta en la lista nueva, entonces ya no es mi sucesor, tiene que borrar las llaves
-            print("Se fue alguien de mi lista de sucsores", succ)
             if not node_exist:
                 if succ.ping():  # comprobar que esta vivo
                     print(self)
@@ -327,16 +323,12 @@ class Local(object):
     def delete_old_agent(self, succ: Remote):
         if succ.address_ == self.address_:
             return
-        print(f"El nodo {self} quiere que el nodo {succ} borre algo")
         my_data = self.load_data()
         for key in my_data.keys():
             key_succ = self.find_successor(hash(key))
-            print(key_succ, "//////////////")
             # si soy el duenho no la mando a borrar
             if key_succ.address_ == self.address_:
-                print("***********************")
                 response = succ.delete_old_agent_remote(key)
-                print(response, "testeo desp de borrar la llave q ya no debes tener")
 
     def get_successors(self):
         self.log("get_successors")
@@ -540,28 +532,19 @@ class Local(object):
             return succ._use_agent(api_name, endpoint, params)
 
     def show_agents(self):
-        print("EN EL SHOW AGENTS EN CHORD>PY")
         agents = []
         current_node = self
 
         agents = agents + list(current_node.data_.keys())
-        print("AGENTS DESPUES DE AÑADIR LOS PRIMEROS", agents)
         current_node = current_node.successor()
-        print("SUCESOR", current_node)
 
         while current_node.address_ != self.address_:
-            print("DENTRO DEL WHILE")
             response = json.loads(current_node.get_all_agents())
-            print("DENTRO DEL WHILE EN SHOW ALL, EL RESPONSE", response)
-            print(
-                "DENTRO DEL WHILE EN SHOW ALL, EL RESPONSE['agents']",
-                response["agents"],
-            )
             agents = agents + response["agents"]
             current_node = current_node.successor()
 
         agents.sort()
-        return json.dumps(agents)
+        return json.dumps(list(set(agents)))
 
     def delete_agent(self, id_api, id, api_name):
         succ = self.find_successor(id)
@@ -594,16 +577,11 @@ class Local(object):
         return " ".join(desc)
 
     def get_agent_functionality(self, description: str):
-        print("ENTRANDO A GET_AGENT_FUNCTIONALITY")
         agents = []
         current_node = self
 
         for key in current_node.data_:
-            print("KEY", key)
-            print("DESCRIPTION TO FIND", description)
-            print("DESCRIPCION DEL KEY", current_node.get_description(key))
             sim = get_similarity(description, current_node.get_description(key))
-            print("SIMILITUD", sim)
             if sim >= SIMILARITY_THRESHOLD:
                 agents.append((current_node.data_[key], sim))
 
@@ -616,7 +594,6 @@ class Local(object):
                 key_desc = desc[2]
                 data = desc[1]
                 key = desc[0]
-                print("LA DATA", data)
                 sim = get_similarity(description, key_desc)
                 if sim >= SIMILARITY_THRESHOLD:
                     agents.append((data, sim))
@@ -624,8 +601,7 @@ class Local(object):
             current_node = current_node.successor()
 
         agents.sort(reverse=True, key=lambda x: x[1])
-        agents = [item[0] for item in agents]
-        print("AGENTES ORDENADOS", agents)
+        agents = list(set([item[0] for item in agents]))
         return json.dumps(agents[:10])
 
     def _use_agent(self, api_name, endpoint, params):
