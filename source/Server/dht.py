@@ -41,7 +41,7 @@ class DHT(object):
         while 1:
             try:
                 conn, addr = self.socket_.accept()
-                print(addr, "conexion establecida ")
+                print("conexion establecida con ", addr)
             except socket.error:
                 self.shutdown_ = True
                 break
@@ -89,9 +89,7 @@ class DHT(object):
                 result = self.local_.delete_agent(tmp[1], id, tmp[0])
 
             if command == "GET_FUNC":
-                print("ENTRANDO A GET_FUNC EN DHT")
                 result = self.local_.get_agent_functionality(request)
-                print("RESULTADO OBTENIDO EN GET_FUNC EN DHT")
                 print(result)
 
             # if command == "FINISH":
@@ -133,7 +131,7 @@ if __name__ == "__main__":
         )
     else:
         print("Invalid number of arguments received")
-    input("Press any key to shutdown")
+    input("Press any key to shutdown\n")
     print()
     print("shuting down..")
     dht.shutdown()
