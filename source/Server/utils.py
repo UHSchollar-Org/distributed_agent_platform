@@ -84,15 +84,9 @@ def process_text(string_format):
     return " ".join(text)
 
 def get_similarity(text_1, text_2):
-    print("ENTRANDO A GET_SIMILARITY")
-    print("TEXTO 1", text_1)
-    print("TEXTO 2", text_2)
     text_1 = process_text(text_1)
     text_2 = process_text(text_2)
-    print("TEXTO 1 PROCESADO", text_1)
-    print("TEXTO 2 PROCESADO", text_2)
     vectorizer = TfidfVectorizer()
     X = vectorizer.fit_transform([text_1, text_2])
     similarity_matrix = cosine_similarity(X, X)
-    print("MATRIZ DE SIMILITUD")
     return similarity_matrix[0][1]

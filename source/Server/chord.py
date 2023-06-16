@@ -69,7 +69,7 @@ class Local(object):
     def __init__(self, local_address, remote_address=None):
         new_local = Address(local_address.ip, local_address.port + 1)
         self.address_ = new_local
-        print("self id = %s" % self.id())
+        # print("self id = %s" % self.id())
         self.shutdown_ = False
         # list of successors
         self.successors_ = []
@@ -174,7 +174,6 @@ class Local(object):
     @repeat_and_sleep(STABILIZE_INT)
     @retry_on_socket_error(STABILIZE_RET)
     def stabilize(self):
-        print("successor en estanilizar")
         suc = self.successor()
         # We may have found that x is our new successor iff
         # - x = pred(suc(n))
@@ -245,10 +244,7 @@ class Local(object):
         # self.update_successors()
         if len(dicc) > 0:
             for key in dicc:
-                print("id ", hash(key))
                 key_succ = self.find_successor(hash(key))
-                print(key_succ, "----------------")
-                print(key_succ.address_ == remote.address_)
                 if (
                     key_succ.address_ == remote.address_
                     and remote.address_ != self.address_
@@ -316,7 +312,6 @@ class Local(object):
             # si el sucesor actual no esta en la lista nueva, entonces ya no es mi sucesor, tiene que borrar las llaves
             if not node_exist:
                 if succ.ping():  # comprobar que esta vivo
-                    print(self)
                     self.delete_old_agent(succ)
 
     #!esto es lo nuevo

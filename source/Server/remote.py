@@ -139,10 +139,8 @@ class Remote(object):
 
     @requires_connection
     def get_all_agents(self):
-        print("EN EL REMOTE GETALLAGENTS")
         self.send(f"get_all_agents")
         response = self.recv()
-        print("EL RESPONSE DE REMOTE", response)
         return response
 
     @requires_connection
