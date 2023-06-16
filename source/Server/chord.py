@@ -1,3 +1,4 @@
+from itertools import count
 import os
 import sys
 import json
@@ -88,6 +89,7 @@ class Local(object):
         self.agnt_plat_server = AgentPlataform(self.file_name)
         # --
         self.temp_new_predecessor = None
+        self.count = 0
 
     def create_files(self):
         if os.path.exists(self.file_name + ".json"):
@@ -289,8 +291,11 @@ class Local(object):
 
             # sirve?
             if self.temp_new_predecessor != None:
-                self.send_keys_to_my_new_predecessor(self.temp_new_predecessor)
-                self.temp_new_predecessor = None
+                self.count += 1
+                if self.count == 3:
+                    self.count = 0
+                    self.send_keys_to_my_new_predecessor(self.temp_new_predecessor)
+                    self.temp_new_predecessor = None
 
             # si hubo cambios en los sucesores
             if not check_equal_list(previous_succs, successors_copy):  # here
