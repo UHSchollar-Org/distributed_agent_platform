@@ -600,6 +600,7 @@ class Local(object):
         return json.dumps(agents[:10])
 
     def _use_agent(self, api_name, endpoint, params):
+        print(api_name, endpoint, params, "-------")
         result = self.agnt_plat_server.comunicate_with_api(api_name, endpoint, params)
         return result
 

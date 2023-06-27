@@ -30,7 +30,7 @@ class AgentPlataform(object):
             data = json.load(archivo)
         return data
 
-    def comunicate_with_api(self, api_name, endopint_name, params=None):
+    def comunicate_with_api(self, api_name, endopint_name, params_=None):
         """
         Esta funcion se encarga de establecer la comunicacion con la api
         deseada, si no ocurren errores devuelve el output de la API, en otro
@@ -60,10 +60,12 @@ class AgentPlataform(object):
             else:
                 website = data[api_name]
                 url = website[index1][3]
-                if params != "None":
-                    url = self._create_params_url(url, params)
-                response = requests.get(url)
-
+                if params_ != None:
+                    params = self._create_params(params_)
+                    params = dict(params)
+                    response = requests.get(url, params)
+                else:
+                    response = requests.get(url)
                 if response.status_code == 200:
                     # La solicitud fue exitosa
                     json_data = response.json()
@@ -79,11 +81,17 @@ class AgentPlataform(object):
         else:
             return "Api doesnt match any other"
 
-    def _create_params_url(self, website, args):
+    def _create_params(self, args):
+        print(args, "llamando a create params")
         args_ = args[1 : len(args) - 1]
-        args_ = args_.split(sep=",")
-        url = website + "/".join(str(arg) for arg in args_)
-        return url
+        args_ = args_.strip().split(sep=",")
+        print(args_, "args_")
+        params_dict = {}
+        for x in args_:
+            tmp = x.split(sep="=")
+            params_dict[tmp[0]] = tmp[1]
+        print(params_dict)
+        return params_dict
 
     def asociate_id_api(self, api):
         id = self.generate_id(api)
