@@ -6,7 +6,7 @@ app = FastAPI()
 
 
 class Hello_api(object):
-    @app.get("192.168.1.104/hola/")
+    @app.get("/")
     async def hello():
         return {"message": "hello"}
 
@@ -20,8 +20,8 @@ class Hello_api(object):
         return "Hello_api"
 
 
-# ApiCalculator add [x,y] http://192.168.1.104:8002/add/ "Suma dos numeros"-ApiCalculator sub [x,y] http://192.168.1.104:8002/sub/ "Resta dos numeros"
-# Hola hola [] http://127.0.0.1:8001/hola/ "Dice hola"
+# ApiCalculator add [x,y] http://127.0.0.1:8002/add/ "Suma dos numeros"-ApiCalculator sub [x,y] http://127.0.0.1:8002/sub/ "Resta dos numeros"
+# Hola hola [] http://127.0.0.1:8001/ "Dice hola"
 # uvicorn api_example:app --reload levantar server
 # http://127.0.0.1:8000
 

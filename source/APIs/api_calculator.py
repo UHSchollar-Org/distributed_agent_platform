@@ -6,18 +6,13 @@ app = FastAPI()
 
 
 class Calculator_api(object):
-    @app.get("/add")
-    async def add(x, y):
-        result = int(x) + int(y)
-        return {"result": result}
+    @app.get("/add/")
+    async def add(x: int, y: int):
+        return {"result": x + y}
 
-    @app.get("/sub")
-    async def sub(x, y):
-        result = int(x) - int(y)
-        return {"result": result}
-
-    def get_url(self):
-        return "/add"
+    @app.get("/sub/")
+    async def sub(x: int, y: int):
+        return {"result": x + y}
 
     def name(self):
         return "Calculator"

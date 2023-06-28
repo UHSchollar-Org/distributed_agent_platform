@@ -30,9 +30,3 @@ SIMILARITY_THRESHOLD = 0.1
 REPLICATION_FACTOR = 2
 
 SIMILARITY_THRESHOLD = 0.1
-
-"""
-probe 3 nodos, puse llave replico bien,agregue otro q no debia tener la llave y no la cogio, lo borre y todo genial, agregue dos mas donde 1 tenia q tener la llave y la cogio, hay q borrarla del q ya no debe tenerla
---------------------------------------------------
-
-"""

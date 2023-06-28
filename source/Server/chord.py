@@ -1,4 +1,3 @@
-from itertools import count
 import os
 import sys
 import json
@@ -6,7 +5,6 @@ import socket
 import threading
 import random
 import time
-from Aux_ import check_equal_list, list_to_string
 import utils
 from address import Address, inrange
 from remote import Remote
@@ -69,14 +67,13 @@ class Local(object):
     def __init__(self, local_address, remote_address=None):
         new_local = Address(local_address.ip, local_address.port + 1)
         self.address_ = new_local
-        # print("self id = %s" % self.id())
         self.shutdown_ = False
         # list of successors
         self.successors_ = []
         # data
         self.data_ = {}
         # join the DHT
-        self.join(remote_address)  # TODO problemas con el join
+        self.join(remote_address)
         # we don't have deamons until we start
         self.daemons_ = {}
         # initially no commands
@@ -87,7 +84,6 @@ class Local(object):
         self.create_files()
         # plataforma agente
         self.agnt_plat_server = AgentPlataform(self.file_name)
-        # --
         self.temp_new_predecessor = None
         self.count = 0
 
@@ -133,15 +129,6 @@ class Local(object):
         # self.socket_.shutdown(socket.SHUT_RDWR)
         self.socket_.close()
 
-        # logging function
-
-    def log(self, info):
-        pass
-        """f = open("tmp//chord.log", "a+")
-        f.write(str(self.id()) + " : " + info + "\n")
-        f.close()
-        # print str(self.id()) + " : " +  info"""
-
     def start(self):
         # start the daemons
         self.daemons_["run"] = Daemon(self, "run")
@@ -151,8 +138,6 @@ class Local(object):
         # self.daemons_["distribute_data"] = Daemon(self, "distribute_data")
         for key in self.daemons_:
             self.daemons_[key].start()
-
-        self.log("started")
 
     def ping(self):
         return True
@@ -168,8 +153,6 @@ class Local(object):
             self.finger_[0] = remote.find_successor(self.id())
         else:
             self.finger_[0] = self
-
-        self.log("joined")
 
     @repeat_and_sleep(STABILIZE_INT)
     @retry_on_socket_error(STABILIZE_RET)
@@ -228,7 +211,6 @@ class Local(object):
         # - the new node r is in the range (pred(n), n)
         # OR
         # - our previous predecessor is dead
-        self.log("notify")
         if (
             self.predecessor() == None
             or inrange(remote.id(), self.predecessor().id(1), self.id())
@@ -256,7 +238,6 @@ class Local(object):
     @repeat_and_sleep(FIX_FINGERS_INT)
     def fix_fingers(self):
         # Randomly select an entry in finger_ table and update its value
-        self.log("fix_fingers")
         i = random.randrange(LOGSIZE - 1) + 1
         self.finger_[i] = self.find_successor(self.id(1 << i))
         # Keep calling us
@@ -267,8 +248,6 @@ class Local(object):
     def update_successors(self):
         previous_succs = self.successors_.copy()
 
-        self.log("update successor")
-        # print("successor en update successor")
         suc = self.successor()
         # if we are not alone in the ring, calculate
         if suc.id() != self.id():
@@ -282,7 +261,6 @@ class Local(object):
             self.successors_ = successors
             successors_copy = successors.copy()
 
-            # sirve?
             if self.temp_new_predecessor != None:
                 self.count += 1
                 if self.count == 3:
@@ -293,11 +271,7 @@ class Local(object):
             # si hubo cambios en los sucesores
             if not check_equal_list(previous_succs, successors_copy):  # here
                 self.replication_new_succ()
-                #!esto tmb es nuevo
                 self.iterate_previous_successors(previous_succs, successors)
-            # else:
-            #     # print("NO ENCONTRE NADIE NUEVO")
-            #     pass
         return True
 
     def iterate_previous_successors(self, previous_succs, successors):
@@ -314,7 +288,6 @@ class Local(object):
                 if succ.ping():  # comprobar que esta vivo
                     self.delete_old_agent(succ)
 
-    #!esto es lo nuevo
     def delete_old_agent(self, succ: Remote):
         if succ.address_ == self.address_:
             return
@@ -326,7 +299,6 @@ class Local(object):
                 response = succ.delete_old_agent_remote(key)
 
     def get_successors(self):
-        self.log("get_successors")
         return [
             (node.address_.ip, node.address_.port)
             for node in self.successors_[: N_SUCCESSORS - 1]
@@ -356,7 +328,6 @@ class Local(object):
         # The successor of a key can be us iff
         # - we have a pred(n)
         # - id is in (pred(n), n]
-        self.log("find_successor")
         if self.predecessor() and inrange(id, self.predecessor().id(1), self.id(1)):
             return self
         node = self.find_predecessor(id)
@@ -365,7 +336,6 @@ class Local(object):
 
     # @retry_on_socket_error(FIND_PREDECESSOR_RET)
     def find_predecessor(self, id):
-        self.log("find_predecessor")
         node = self
         # If we are alone in the ring, we are the pred(id)
         # print("successor en find_predecessor")
@@ -379,7 +349,6 @@ class Local(object):
     def closest_preceding_finger(self, id):
         # first fingers in decreasing distance, then successors in
         # increasing distance.
-        self.log("closest_preceding_finger")
         for remote in reversed(self.successors_ + self.finger_):
             if (
                 remote != None
@@ -396,7 +365,6 @@ class Local(object):
         self.socket_.bind((self.address_.ip, int(self.address_.port)))
         self.socket_.listen(10)
         while 1:
-            self.log("run loop")
             try:
                 conn, addr = self.socket_.accept()
             except socket.error:
@@ -410,73 +378,7 @@ class Local(object):
 
             # defaul : "" = not respond anything
             result = json.dumps("")
-            if command == "get_successor":
-                successor = self.successor()
-                result = json.dumps((successor.address_.ip, successor.address_.port))
-            if command == "get_predecessor":
-                # we can only reply if we have a predecessor
-                if self.predecessor_ != None:
-                    predecessor = self.predecessor_
-                    result = json.dumps(
-                        (predecessor.address_.ip, predecessor.address_.port)
-                    )
-            if command == "find_successor":
-                successor = self.find_successor(int(request))
-                result = json.dumps((successor.address_.ip, successor.address_.port))
-            if command == "closest_preceding_finger":
-                closest = self.closest_preceding_finger(int(request))
-                result = json.dumps((closest.address_.ip, closest.address_.port))
-            if command == "notify":
-                npredecessor = Address(
-                    request.split(" ")[0], int(request.split(" ")[1])
-                )
-                self.notify(Remote(npredecessor))
-            if command == "get_successors":
-                result = json.dumps(self.get_successors())
-
-            if command == "set_agent":
-                result = self._set(request)
-                print(result)
-
-            if command == "get_agent":
-                api_name = request
-                result = self._get(json.dumps({"key": api_name}))
-
-            if command == "get_all_agents":
-                result = json.dumps({"agents": list(self.data_.keys())})
-
-            if command == "use_agent":
-                tmp = request.split(" ")
-                result = self._use_agent(tmp[0], tmp[1], tmp[2])
-                print(result)
-
-            if command == "delete":
-                tmp = request.split()
-                api_id = tmp[0]
-                api_name = tmp[1]
-                result = self._delete_agent(api_id, api_name)
-
-            if command == "get_all_desc":
-                result = []
-
-                for key in self.data_:
-                    result.append((key, self.data_[key], self.get_description(key)))
-
-                result = json.dumps({"descs": result[:-1]})
-
-            if command == "send_all_keys":
-                data = json.loads(request)
-                for key in data.keys():
-                    # value = list_to_string(data[key])
-                    self._set(json.dumps({"key": key, "value": data[key]}), True)
-
-            if command == "delete_old_agent":
-                key = request
-                try:
-                    self.data_.pop(key)
-                    result = "Old key removed"
-                except:
-                    result = "Error la llave no existe"
+            result = dispatch(command, request, result)
 
             # or it could be a user specified operation
             for t in self.command_:
@@ -489,9 +391,7 @@ class Local(object):
             if command == "shutdown":
                 self.socket_.close()
                 self.shutdown_ = True
-                self.log("shutdown started")
                 break
-        self.log("execution terminated")
 
     def register_command(self, cmd, callback):
         self.command_.append((cmd, callback))
@@ -506,7 +406,6 @@ class Local(object):
             result = succ.set_agent_remote(json.dumps({"key": key, "value": value}))
         else:
             result = succ._set(json.dumps({"key": key, "value": value}))
-        # self.replication_set(key, value)
         return result
 
     def get_agent(self, id: str, api_name: str):
@@ -547,17 +446,13 @@ class Local(object):
             result = succ.delete_agent_remote(id_api, api_name)
         else:
             result = succ._delete_agent(id_api, api_name)
-        # print("ghjk")
-        # self.replication_delete(id_api, api_name)
         return result
 
     def _delete_agent(self, id_api: str, api_name):
-        #!va aqui
         self.replication_delete(id_api, api_name)
         result = self.agnt_plat_server.delete_api_server(id_api)
         try:
             self.data_.pop(api_name)
-            # print("BORRE LA API DE CACHE")
         except:
             result = "Invalid api_name"
         return result
@@ -627,10 +522,6 @@ class Local(object):
         key = data["key"]
         api_id = self.set(key, new_)
         return json.dumps({"status": "ok", "api_id": api_id})
-
-        # except Exception:
-        #     # something is not working
-        #     return json.dumps({"status": "failed"})
 
     def get(self, key):
         try:
@@ -734,12 +625,57 @@ if __name__ == "__main__":
         node.start()
 
 
-# a = Remote(Address("127.0.0.1", 9010))
-# b = Remote(Address("127.0.0.1", 9012))
-# c = Remote(Address("127.0.0.1", 9014))
-# d = Remote(Address("127.0.0.1", 9016))
-
-# xx = [a, b, c, d]
-
-# z = Remote(Address("127.0.0.1", 9010))
-# print(z in xx)
+def dispatch(command, request, result):
+    if command == "get_successor":
+        successor = Local.successor()
+        result = json.dumps((successor.address_.ip, successor.address_.port))
+    if command == "get_predecessor":
+        if Local.predecessor_ != None:
+            predecessor = Local.predecessor_
+            result = json.dumps((predecessor.address_.ip, predecessor.address_.port))
+    if command == "find_successor":
+        successor = Local.find_successor(int(request))
+        result = json.dumps((successor.address_.ip, successor.address_.port))
+    if command == "closest_preceding_finger":
+        closest = Local.closest_preceding_finger(int(request))
+        result = json.dumps((closest.address_.ip, closest.address_.port))
+    if command == "notify":
+        npredecessor = Address(request.split(" ")[0], int(request.split(" ")[1]))
+        Local.notify(Remote(npredecessor))
+    if command == "get_successors":
+        result = json.dumps(Local.get_successors())
+    if command == "set_agent":
+        result = Local._set(request)
+        print(result)
+    if command == "get_agent":
+        api_name = request
+        result = Local._get(json.dumps({"key": api_name}))
+    if command == "get_all_agents":
+        result = json.dumps({"agents": list(Local.data_.keys())})
+    if command == "use_agent":
+        tmp = request.split(" ")
+        result = Local._use_agent(tmp[0], tmp[1], tmp[2])
+        print(result)
+    if command == "delete":
+        tmp = request.split()
+        api_id = tmp[0]
+        api_name = tmp[1]
+        result = Local._delete_agent(api_id, api_name)
+    if command == "get_all_desc":
+        result = []
+        for key in Local.data_:
+            result.append((key, Local.data_[key], Local.get_description(key)))
+        result = json.dumps({"descs": result[:-1]})
+    if command == "send_all_keys":
+        data = json.loads(request)
+        for key in data.keys():
+            # value = list_to_string(data[key])
+            Local._set(json.dumps({"key": key, "value": data[key]}), True)
+    if command == "delete_old_agent":
+        key = request
+        try:
+            Local.data_.pop(key)
+            result = "Old key removed"
+        except:
+            result = "Error la llave no existe"
+    return result

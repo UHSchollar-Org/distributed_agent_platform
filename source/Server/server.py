@@ -11,7 +11,6 @@ class AgentPlataform(object):
         self.apis_id = path + "api_id" + ".json"
 
     def register_api(self, api_name: str, list_data: List[str]):
-        # TODO falta verificar que los endopints de las apis sean validos
         with open(self.apis, "r") as archivo:
             data = json.load(archivo)
         data[api_name] = list_data
@@ -21,32 +20,11 @@ class AgentPlataform(object):
         return self.asociate_id_api(api_name)
 
     def get_apis(self):
-        """
-        Returns:
-        ~~~~~~~
-            _str_: Devuelve la lista de todas las APIs
-        """
         with open(self.apis, "r") as archivo:
             data = json.load(archivo)
         return data
 
     def comunicate_with_api(self, api_name, endopint_name, params_=None):
-        """
-        Esta funcion se encarga de establecer la comunicacion con la api
-        deseada, si no ocurren errores devuelve el output de la API, en otro
-        caso envia un mensaje del error
-
-        Args:
-        ~~~~
-            api_name (_str_): Nombre de la API
-            endopint_name (_str_): Nombre del enpoint de la API a utilizar
-            params (_str_, optional): _Parametros que recibe la API_. Defaults to None.
-
-        Returns:
-        ~~~~~~~
-            _type_: _description_
-        """
-        # print("Se llamo al metodo de comunicarse con la api")
         with open(self.apis, "r") as archivo:
             data = json.load(archivo)
         if api_name in data.keys():
@@ -63,15 +41,14 @@ class AgentPlataform(object):
                 if params_ != None:
                     params = self._create_params(params_)
                     params = dict(params)
+                    print(url, params, "??????????????????????")
                     response = requests.get(url, params)
                 else:
                     response = requests.get(url)
                 if response.status_code == 200:
                     # La solicitud fue exitosa
                     json_data = response.json()
-                    # print(json_data)
                 else:
-                    # La solicitud no fue exitosa
                     print(
                         "La solicitud falló con el código de estado:",
                         response.status_code,
@@ -103,7 +80,6 @@ class AgentPlataform(object):
         return id
 
     def delete_api_server(self, id):
-        # TODO testing
         with open(self.apis_id, "r") as archivo:
             data = json.load(archivo)
         if id not in data.keys():
@@ -118,7 +94,6 @@ class AgentPlataform(object):
             with open(self.apis, "r") as archivo:
                 data = json.load(archivo)
                 data.pop(api_name)
-                # print("BORRE LA API del json,", api_name)
             with open(self.apis, "w") as archivo:
                 json.dump(data, archivo)
             return "Agente eliminado con exito!"

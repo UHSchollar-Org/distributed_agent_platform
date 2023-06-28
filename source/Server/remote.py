@@ -56,8 +56,6 @@ class Remote(object):
         self.socket_.sendall(mesg_encode)
         self.last_msg_send_ = msg
 
-    # print "send: %s <%s>" % (msg, self.address_)
-
     def recv(self):
         # we use to have more complicated logic here
         # and we might have again, so I'm not getting rid of this yet
