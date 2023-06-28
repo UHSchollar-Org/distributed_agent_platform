@@ -85,14 +85,6 @@ class NodeAP(object):
         return result
 
 
-def create_dht(lport):
-    laddress = [Address("127.0.0.1", port) for port in lport]
-    r = [NodeAP(laddress[0])]
-    for address in laddress[1:]:
-        r.append(NodeAP(address, laddress[0]))
-    return r
-
-
 if __name__ == "__main__":
     import sys
 

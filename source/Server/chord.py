@@ -378,7 +378,7 @@ class Local(object):
 
             # defaul : "" = not respond anything
             result = json.dumps("")
-            result = dispatch(command, request, result)
+            result = self.dispatch(command, request, result)
 
             # or it could be a user specified operation
             for t in self.command_:
@@ -604,6 +604,62 @@ class Local(object):
         dicc = self.data_
         return dicc
 
+    def dispatch(self, command, request, result):
+        if command == "get_successor":
+            successor = self.successor()
+            result = json.dumps((successor.address_.ip, successor.address_.port))
+        if command == "get_predecessor":
+            if self.predecessor_ != None:
+                predecessor = self.predecessor_
+                result = json.dumps(
+                    (predecessor.address_.ip, predecessor.address_.port)
+                )
+        if command == "find_successor":
+            successor = self.find_successor(int(request))
+            result = json.dumps((successor.address_.ip, successor.address_.port))
+        if command == "closest_preceding_finger":
+            closest = self.closest_preceding_finger(int(request))
+            result = json.dumps((closest.address_.ip, closest.address_.port))
+        if command == "notify":
+            npredecessor = Address(request.split(" ")[0], int(request.split(" ")[1]))
+            self.notify(Remote(npredecessor))
+        if command == "get_successors":
+            result = json.dumps(self.get_successors())
+        if command == "set_agent":
+            result = self._set(request)
+            print(result)
+        if command == "get_agent":
+            api_name = request
+            result = self._get(json.dumps({"key": api_name}))
+        if command == "get_all_agents":
+            result = json.dumps({"agents": list(self.data_.keys())})
+        if command == "use_agent":
+            tmp = request.split(" ")
+            result = self._use_agent(tmp[0], tmp[1], tmp[2])
+            print(result)
+        if command == "delete":
+            tmp = request.split()
+            api_id = tmp[0]
+            api_name = tmp[1]
+            result = self._delete_agent(api_id, api_name)
+        if command == "get_all_desc":
+            result = []
+            for key in self.data_:
+                result.append((key, self.data_[key], self.get_description(key)))
+            result = json.dumps({"descs": result[:-1]})
+        if command == "send_all_keys":
+            data = json.loads(request)
+            for key in data.keys():
+                self._set(json.dumps({"key": key, "value": data[key]}), True)
+        if command == "delete_old_agent":
+            key = request
+            try:
+                self.data_.pop(key)
+                result = "Old key removed"
+            except:
+                result = "Error la llave no existe"
+        return result
+
 
 if __name__ == "__main__":
     import sys
@@ -623,59 +679,3 @@ if __name__ == "__main__":
         node.predecessor_ = node
         node.successors_ = [node] * N_SUCCESSORS
         node.start()
-
-
-def dispatch(command, request, result):
-    if command == "get_successor":
-        successor = Local.successor()
-        result = json.dumps((successor.address_.ip, successor.address_.port))
-    if command == "get_predecessor":
-        if Local.predecessor_ != None:
-            predecessor = Local.predecessor_
-            result = json.dumps((predecessor.address_.ip, predecessor.address_.port))
-    if command == "find_successor":
-        successor = Local.find_successor(int(request))
-        result = json.dumps((successor.address_.ip, successor.address_.port))
-    if command == "closest_preceding_finger":
-        closest = Local.closest_preceding_finger(int(request))
-        result = json.dumps((closest.address_.ip, closest.address_.port))
-    if command == "notify":
-        npredecessor = Address(request.split(" ")[0], int(request.split(" ")[1]))
-        Local.notify(Remote(npredecessor))
-    if command == "get_successors":
-        result = json.dumps(Local.get_successors())
-    if command == "set_agent":
-        result = Local._set(request)
-        print(result)
-    if command == "get_agent":
-        api_name = request
-        result = Local._get(json.dumps({"key": api_name}))
-    if command == "get_all_agents":
-        result = json.dumps({"agents": list(Local.data_.keys())})
-    if command == "use_agent":
-        tmp = request.split(" ")
-        result = Local._use_agent(tmp[0], tmp[1], tmp[2])
-        print(result)
-    if command == "delete":
-        tmp = request.split()
-        api_id = tmp[0]
-        api_name = tmp[1]
-        result = Local._delete_agent(api_id, api_name)
-    if command == "get_all_desc":
-        result = []
-        for key in Local.data_:
-            result.append((key, Local.data_[key], Local.get_description(key)))
-        result = json.dumps({"descs": result[:-1]})
-    if command == "send_all_keys":
-        data = json.loads(request)
-        for key in data.keys():
-            # value = list_to_string(data[key])
-            Local._set(json.dumps({"key": key, "value": data[key]}), True)
-    if command == "delete_old_agent":
-        key = request
-        try:
-            Local.data_.pop(key)
-            result = "Old key removed"
-        except:
-            result = "Error la llave no existe"
-    return result
