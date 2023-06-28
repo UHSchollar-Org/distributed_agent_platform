@@ -1,0 +1,3 @@
+*.pyc
+source/Server/__pycache__/server.cpython-39.pyc
+*.json
