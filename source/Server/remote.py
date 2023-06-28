@@ -1,9 +1,6 @@
-from cgitb import reset
-from http.client import responses
 import json
 import socket
 import threading
-import hashlib
 from urllib import response
 from address import Address
 from settings import SIZE, LOGSIZE
@@ -58,8 +55,6 @@ class Remote(object):
         mesg_encode = tmp.encode("utf-8")
         self.socket_.sendall(mesg_encode)
         self.last_msg_send_ = msg
-
-    # print "send: %s <%s>" % (msg, self.address_)
 
     def recv(self):
         # we use to have more complicated logic here
@@ -142,10 +137,8 @@ class Remote(object):
 
     @requires_connection
     def get_all_agents(self):
-        print("EN EL REMOTE GETALLAGENTS")
         self.send(f"get_all_agents")
         response = self.recv()
-        print("EL RESPONSE DE REMOTE", response)
         return response
 
     @requires_connection

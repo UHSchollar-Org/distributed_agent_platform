@@ -6,24 +6,21 @@ app = FastAPI()
 
 
 class Calculator_api(object):
-    @app.get("/add/{x}/{y}")
-    async def add(x, y):
-        result = int(x) + int(y)
-        return {"result": result}
+    @app.get("/add/")
+    async def add(x: int, y: int):
+        return {"result": x + y}
 
-    @app.get("/sub/{x}/{y}")
-    async def sub(x, y):
-        result = int(x) - int(y)
-        return {"result": result}
-
-    def get_url(self):
-        return '/add'
+    @app.get("/sub/")
+    async def sub(x: int, y: int):
+        return {"result": x + y}
 
     def name(self):
-        return 'Calculator'
+        return "Calculator"
 
     def get_description(self):
-        return '''
+        return """
         Calculadora que recibe dos numros y devulve la suma estos
-        '''
+        """
+
+
 # example : ApiCalculator add [x,y] http://127.0.0.1:8002/add "Suma dos numeros"

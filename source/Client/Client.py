@@ -2,14 +2,22 @@ import socket
 from utils import get_ip_port
 
 
-def send_and_close(choice, message, socket: socket):
+def send_and_close(choice, message, socket: socket.socket):
     socket.send(message.encode("utf-8"))
     data = socket.recv(1024)
     data = str(data.decode("utf-8"))
-    if choice == "1" or choice == "3" or choice == "4" or choice == "5" or choice == "6":
+    if (
+        choice == "1"
+        or choice == "3"
+        or choice == "4"
+        or choice == "5"
+        or choice == "6"
+    ):
         print(data)
     if choice == "2":
         print("The value corresponding to the key is : ", data)
+    socket.close()
+    socket = None
 
 
 def console():
@@ -28,10 +36,22 @@ def console():
         print("*****************************************************")
 
         choice = input()
-        print("Estableciendo conexion: ", ip, port)
 
+        if choice not in ["1", "2", "3", "4", "5", "6"]:
+            if choice != "7":
+                print("Invalid choice")
+                continue
+            print("Exiting Client")
+            exit()
+
+        print("Estableciendo conexion: ", ip, port)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((ip, port))
+
+        if sock.getpeername() == (ip, port):
+            print("Conexión establecida con", sock.getpeername())
+        else:
+            print("Error al intentar establecer conexión")
 
         # insert
         if choice == "1":
@@ -54,7 +74,7 @@ def console():
             send_and_close(choice, message, sock)
 
         elif choice == "4":
-            key = input("ENTER THE API NAME: ")
+            key = input("ENTER THE API_NAME ENPOIN_NAME PARMAS: ")
             message = "USE_AGENT|" + str(key) + "\r\n"
             send_and_close(choice, message, sock)
 
@@ -62,23 +82,24 @@ def console():
             key = input("ENTER FUNCTIONALITY ")
             message = "GET_FUNC|" + str(key) + "\r\n"
             send_and_close(choice, message, sock)
-        
+
         elif choice == "6":
             message = "SHOW_ALL_AGENTS\r\n"
             print("SHOWING ALL AGENTS")
             send_and_close(choice, message, sock)
 
-        elif choice == "7":
-            print("Closing the socket")
-            sock.close()
-            print("Exiting Client")
-            exit()
+        # elif choice == "7":
+        #     print("Closing the socket")
+        #     sock.close()
+        #     sock = None
+        #     print("Exiting Client")
+        #     exit()
 
-        else:
-            print("INCORRECT CHOICE")
+        # else:
+        #     print("INCORRECT CHOICE")
 
-        sock.close()
-        sock = None
+        # sock.close()
+        # sock = None
 
 
 def main():
