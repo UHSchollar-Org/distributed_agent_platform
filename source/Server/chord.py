@@ -97,13 +97,15 @@ class Local(object):
                         succ = self.find_successor(id_api)
                         if succ.address_ == self.address_:
                             self.data_[x] = data_json[x]
-                        else:
+                        #else:
                             # mandar un mensaj con la llave al que le toca
-                            succ.set_agent_remote(
+                            """succ.set_agent_remote(
                                 json.dumps(
                                     {"key": x, "value": list_to_string(data_json[x])}
                                 )
-                            )
+                            )"""
+            with open(self.file_name + ".json", "w") as my_file:
+                json.dump(self.data_, my_file)
         else:
             file = open(self.file_name + ".json", "w")
             datos = {}
