@@ -552,7 +552,7 @@ class Local(object):
             return self.agnt_plat_server.register_api(key, value)
 
     def replication_set(self, key, value):
-        if self.find_successor(hash(key)).address_ != self.address_:
+        if not self.is_ours(hash(key)):
             return
         for i in range(0, min(REPLICATION_FACTOR, len(self.successors_))):
             # sino soy yo mismo, tengo q replicar.
@@ -567,7 +567,7 @@ class Local(object):
                 break
 
     def replication_delete(self, id_api, api_name):
-        if self.find_successor(hash(api_name)).address_ != self.address_:
+        if not self.is_ours(hash(api_name)):
             return
         # print(self.address_, "YO SOY")
         for i in range(0, min(len(self.successors_), REPLICATION_FACTOR)):
@@ -590,8 +590,7 @@ class Local(object):
                 if self.successors_[i].address_ != self.address_:
                     # replicar mis llaves solamente
                     for key in dicc:
-                        key_succ = self.find_successor(hash(key))
-                        if key_succ.address_ == self.address_:
+                        if self.is_ours(hash(key)):
                             result = self.successors_[i].set_agent_remote(
                                 json.dumps(
                                     {"key": key, "value": list_to_string(dicc[key])}
