@@ -218,24 +218,40 @@ class Local(object):
             or inrange(remote.id(), self.predecessor().id(1), self.id())
             or not self.predecessor().ping()
         ):
+            old_predecessor = self.predecessor_
             self.predecessor_ = remote
             # Aqui deberia venir, mandarle las llaves que yo tngo suyas
             # self.send_keys_to_my_new_predecessor(remote)
-            self.temp_new_predecessor = remote
-
-    def send_keys_to_my_new_predecessor(self, remote):
+            #self.temp_new_predecessor = remote
+            #Ver que llaves no son mias
+            borrowed_agents = self.get_borrowed_agents(remote, old_predecessor)
+            #Borrar replicas de esas llaves
+            if borrowed_agents:
+                for agent in borrowed_agents:
+                    self.remove_key_value(agent[0])
+                    for i in range(min(REPLICATION_FACTOR,len(self.successors_))):
+                        succ = self.successors_[i]
+                        if succ.id() != self.id():
+                            succ.delete_old_agent_remote(agent[0])
+                #Envia las llaves al predecesor
+                self.send_keys_to_my_new_predecessor(self.predecessor_, borrowed_agents)
+            
+    def get_borrowed_agents(self, remote, oldpredecessor):
         dicc = self.load_data()
+        results = []
         # self.update_successors()
         if len(dicc) > 0:
             for key in dicc:
-                key_succ = self.find_successor(hash(key))
                 if (
-                    key_succ.address_ == remote.address_
+                    inrange(hash(key), oldpredecessor.id(1), remote.id(1))
                     and remote.address_ != self.address_
                 ):
-                    result = remote.set_agent_remote(
-                        json.dumps({"key": key, "value": list_to_string(dicc[key])})
-                    )
+                    results.append((key,dicc[key]))
+        return results
+
+    def send_keys_to_my_new_predecessor(self, remote, keys_values):
+        for key_value in keys_values:
+            result = remote.set_agent_remote(json.dumps({"key": key_value[0], "value": list_to_string(key_value[1])}))
 
     @repeat_and_sleep(FIX_FINGERS_INT)
     def fix_fingers(self):
@@ -262,13 +278,6 @@ class Local(object):
             # if everything worked, we update
             self.successors_ = successors
             successors_copy = successors.copy()
-
-            if self.temp_new_predecessor != None:
-                self.count += 1
-                if self.count == 3:
-                    self.count = 0
-                    self.send_keys_to_my_new_predecessor(self.temp_new_predecessor)
-                    self.temp_new_predecessor = None
 
             # si hubo cambios en los sucesores
             if not check_equal_list(previous_succs, successors_copy):  # here
@@ -554,7 +563,10 @@ class Local(object):
             return self.agnt_plat_server.register_api(key, value)
 
     def replication_set(self, key, value):
-        if not self.is_ours(hash(key)):
+        #TODO Tratar de hacer is_ours
+        """if not self.is_ours(hash(key)):
+            return"""
+        if self.find_successor(hash(key)).address_ != self.address_:
             return
         for i in range(0, min(REPLICATION_FACTOR, len(self.successors_))):
             # sino soy yo mismo, tengo q replicar.
@@ -569,7 +581,10 @@ class Local(object):
                 break
 
     def replication_delete(self, id_api, api_name):
-        if not self.is_ours(hash(api_name)):
+        #TODO Tratar de hacer is_ours
+        """if not self.is_ours(hash(api_name)):
+            return"""
+        if self.find_successor(hash(api_name)).address_ != self.address_:
             return
         # print(self.address_, "YO SOY")
         for i in range(0, min(len(self.successors_), REPLICATION_FACTOR)):
@@ -592,7 +607,8 @@ class Local(object):
                 if self.successors_[i].address_ != self.address_:
                     # replicar mis llaves solamente
                     for key in dicc:
-                        if self.is_ours(hash(key)):
+                        #TODO Tratar de hacer is_ours
+                        if self.find_successor(hash(key)).address_ == self.address_:
                             result = self.successors_[i].set_agent_remote(
                                 json.dumps(
                                     {"key": key, "value": list_to_string(dicc[key])}
@@ -604,6 +620,15 @@ class Local(object):
     def load_data(self):
         dicc = self.data_
         return dicc
+    
+    def remove_key_value(self, key):
+        try:
+            self.data_.pop(key)
+            #TODO Borrar del json
+            result = "Old key removed"
+        except:
+            result = "Error la llave no existe"
+        return result
 
     def dispatch(self, command, request, result):
         if command == "get_successor":
@@ -654,11 +679,7 @@ class Local(object):
                 self._set(json.dumps({"key": key, "value": data[key]}), True)
         if command == "delete_old_agent":
             key = request
-            try:
-                self.data_.pop(key)
-                result = "Old key removed"
-            except:
-                result = "Error la llave no existe"
+            result = self.remove_key_value(key)
         return result
 
 
