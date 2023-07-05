@@ -213,6 +213,7 @@ class Local(object):
         # - the new node r is in the range (pred(n), n)
         # OR
         # - our previous predecessor is dead
+        print("DENTRO DE NOTIFY, SOY", self.id(), "ME HACE NOTIFY", remote.id())
         if (
             self.predecessor() == None
             or inrange(remote.id(), self.predecessor().id(1), self.id())
@@ -224,17 +225,24 @@ class Local(object):
             # self.send_keys_to_my_new_predecessor(remote)
             #self.temp_new_predecessor = remote
             #Ver que llaves no son mias
-            borrowed_agents = self.get_borrowed_agents(remote, old_predecessor)
-            #Borrar replicas de esas llaves
-            if borrowed_agents:
-                for agent in borrowed_agents:
-                    self.remove_key_value(agent[0])
-                    for i in range(min(REPLICATION_FACTOR,len(self.successors_))):
-                        succ = self.successors_[i]
-                        if succ.id() != self.id():
-                            succ.delete_old_agent_remote(agent[0])
-                #Envia las llaves al predecesor
-                self.send_keys_to_my_new_predecessor(self.predecessor_, borrowed_agents)
+            if old_predecessor:
+                print("ENTRO AL IF PORQUE EXISTE OLD_PREDECESSOR :", old_predecessor.id())
+                borrowed_agents = self.get_borrowed_agents(remote, old_predecessor)
+                print("AGENTES PARA MANDARLE AL NUEVO DUEÑO", borrowed_agents)
+                #Borrar replicas de esas llaves
+                if borrowed_agents:
+                    for agent in borrowed_agents:
+                        result = self.remove_key_value(agent[0])
+                        print("RESULTADO DE ELIMINAR EL AGENTE DE MI", result)
+                        for i in range(min(REPLICATION_FACTOR,len(self.successors_))):
+                            succ = self.successors_[i]
+                            if succ.id() != self.id():
+                                res = succ.delete_old_agent_remote(agent[0])
+                                print("RESULTADO DE ELIMINAR EL AGENTE DE", succ.id(), res)
+                    #Envia las llaves al predecesor
+                    print("ENVIANDO AGENTES AL DUEÑO")
+                    self.send_keys_to_my_new_predecessor(remote, borrowed_agents)
+                    print("DESPUES DE ENVIAR AGENTES AL DUEÑO")
             
     def get_borrowed_agents(self, remote, oldpredecessor):
         dicc = self.load_data()
@@ -243,6 +251,7 @@ class Local(object):
         if len(dicc) > 0:
             for key in dicc:
                 if (
+                    #self.find_successor(hash(key)).address_ == remote.address_
                     inrange(hash(key), oldpredecessor.id(1), remote.id(1))
                     and remote.address_ != self.address_
                 ):
@@ -250,8 +259,13 @@ class Local(object):
         return results
 
     def send_keys_to_my_new_predecessor(self, remote, keys_values):
+        print("DENTRO DE SEND KEYS TO NEW PRED")
+        x = 100
+        print(x)
         for key_value in keys_values:
+            print("SE VA A ENVIAR", key_value[0], key_value[1], "A", remote.id())
             result = remote.set_agent_remote(json.dumps({"key": key_value[0], "value": list_to_string(key_value[1])}))
+            print("RESULTADO DE ENVIAR AGENTE", key_value, "AL DUEÑO", remote.id())
 
     @repeat_and_sleep(FIX_FINGERS_INT)
     def fix_fingers(self):
