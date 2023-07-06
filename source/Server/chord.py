@@ -86,6 +86,7 @@ class Local(object):
         self.agnt_plat_server = AgentPlataform(self.file_name)
         self.temp_new_predecessor = None
         self.count = 0
+        self.to_reply = []
 
     def create_files(self):
         if os.path.exists(self.file_name + ".json"):
@@ -180,6 +181,12 @@ class Local(object):
         # print("successor en notify")
         self.successor().notify(self)
         # Keep calling us
+        while self.to_reply:
+            data = self.to_reply.pop()
+            key = data[0]
+            succ = self.find_successor(hash(key))
+            if succ.id() == self.id():
+                self.replication_set(data[0], data[1])
 
         print("===============================================")
         print("STABILIZING")
@@ -239,6 +246,8 @@ class Local(object):
                             if succ.id() != self.id():
                                 res = succ.delete_old_agent_remote(agent[0])
                                 print("RESULTADO DE ELIMINAR EL AGENTE DE", succ.id(), res)
+                            else:
+                                break
                     #Envia las llaves al predecesor
                     print("ENVIANDO AGENTES AL DUEÑO")
                     self.send_keys_to_my_new_predecessor(remote, borrowed_agents)
@@ -260,10 +269,9 @@ class Local(object):
 
     def send_keys_to_my_new_predecessor(self, remote, keys_values):
         print("DENTRO DE SEND KEYS TO NEW PRED")
-        x = 100
-        print(x)
         for key_value in keys_values:
             print("SE VA A ENVIAR", key_value[0], key_value[1], "A", remote.id())
+            #TODO Cambiar remote por self.predecessor
             result = remote.set_agent_remote(json.dumps({"key": key_value[0], "value": list_to_string(key_value[1])}))
             print("RESULTADO DE ENVIAR AGENTE", key_value, "AL DUEÑO", remote.id())
 
@@ -356,7 +364,6 @@ class Local(object):
         if self.predecessor() and inrange(id, self.predecessor().id(1), self.id(1)):
             return self
         node = self.find_predecessor(id)
-        # print("successor en find successor")
         return node.successor()
 
     # @retry_on_socket_error(FIND_PREDECESSOR_RET)
@@ -536,7 +543,9 @@ class Local(object):
     def _set(self, request):
         # try:
         data = json.loads(request)
-        self.replication_set(data["key"], data["value"])
+        #self.replication_set(data["key"], data["value"])
+        key = data["key"]
+        self.to_reply.append((key, data["value"]))
         splited_value = data["value"].split("-")
         data["value"] = splited_value
 
@@ -544,7 +553,6 @@ class Local(object):
         for x in data["value"]:
             new_.append(x.split(" ", maxsplit=4))
 
-        key = data["key"]
         api_id = self.set(key, new_)
         return json.dumps({"status": "ok", "api_id": api_id})
 
