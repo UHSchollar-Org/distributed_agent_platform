@@ -296,6 +296,8 @@ class Local(object):
             if not check_equal_list(previous_succs, successors_copy):  # here
                 self.replication_new_succ()
                 self.iterate_previous_successors(previous_succs, successors)
+        else:
+            self.successors_ = []
         return True
 
     def iterate_previous_successors(self, previous_succs, successors):
