@@ -1,10 +1,25 @@
+import threading
 import socket
-from utils import get_ip_port
+from utils import get_ip_port, ping
+import time
+
+IP, PORT = None, None
+ips_ = [
+    "192.168.1.108",
+    "192.168.1.104",
+    "192.168.1.105",
+    "192.168.1.106",
+    "192.168.1.107",
+]
+ports_ = [x for x in range(9000, 10001) if x % 2 == 0]
 
 
 def send_and_close(choice, message, socket: socket.socket):
+    print("____")
     socket.send(message.encode("utf-8"))
+    print("++++")
     data = socket.recv(1024)
+    print("-------------")
     data = str(data.decode("utf-8"))
     if (
         choice == "1"
@@ -20,10 +35,28 @@ def send_and_close(choice, message, socket: socket.socket):
     socket = None
 
 
-def console():
-    ip, port = get_ip_port()
+def find_new_ip_port():
+    print("RECONNECTING...")
+    for ip in ips_:
+        print("Iterating")
+        for port in ports_:
+            if ping(ip, port):
+                print(f"New ip {ip}, port {port}")
+                return ip, port
 
+
+# def run_try_connection(actual_ip, actual_port):
+#     while True:
+#         IP, PORT = try_connection(actual_ip, actual_port)
+#         print(IP, PORT)
+
+
+def console():
+    IP, PORT = get_ip_port()
+
+    # t = threading.Thread(target=run_try_connection, args=(IP, PORT))
     while True:
+        # t.start()
         print("************************MENU*************************")
         print("PRESS ***********************************************")
         print("1. TO ENTER AGENT ***********************************")
@@ -44,11 +77,20 @@ def console():
             print("Exiting Client")
             exit()
 
-        print("Estableciendo conexion: ", ip, port)
+        print("Estableciendo conexion: ", IP, PORT)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((ip, port))
+        try:
+            sock.connect((IP, PORT))
+        except:
+            IP, PORT = find_new_ip_port()
+            print(IP, PORT, "Luego de reconectar")
+            #sock.connect((IP, PORT))
+            print(sock, "?????")
+            sock.close()
+            sock = None
+            continue
 
-        if sock.getpeername() == (ip, port):
+        if sock.getpeername() == (IP, PORT):
             print("Conexión establecida con", sock.getpeername())
         else:
             print("Error al intentar establecer conexión")
@@ -64,6 +106,7 @@ def console():
         elif choice == "2":
             key = input("ENTER THE KEY: ")
             message = "GET_AGENT|" + str(key) + "\r\n"
+            print(sock, "!!!!!")
             send_and_close(choice, message, sock)
 
         # delete
@@ -87,19 +130,6 @@ def console():
             message = "SHOW_ALL_AGENTS\r\n"
             print("SHOWING ALL AGENTS")
             send_and_close(choice, message, sock)
-
-        # elif choice == "7":
-        #     print("Closing the socket")
-        #     sock.close()
-        #     sock = None
-        #     print("Exiting Client")
-        #     exit()
-
-        # else:
-        #     print("INCORRECT CHOICE")
-
-        # sock.close()
-        # sock = None
 
 
 def main():
