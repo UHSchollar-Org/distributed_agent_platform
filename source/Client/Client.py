@@ -5,8 +5,8 @@ import time
 
 IP, PORT = None, None
 ips_ = [
-    "192.168.1.108",
-    "192.168.1.104",
+    "172.20.10.11",
+    "172.20.10.3",
     "192.168.1.105",
     "192.168.1.106",
     "192.168.1.107",
@@ -15,11 +15,8 @@ ports_ = [x for x in range(9000, 10001) if x % 2 == 0]
 
 
 def send_and_close(choice, message, socket: socket.socket):
-    print("____")
     socket.send(message.encode("utf-8"))
-    print("++++")
     data = socket.recv(1024)
-    print("-------------")
     data = str(data.decode("utf-8"))
     if (
         choice == "1"
@@ -45,18 +42,10 @@ def find_new_ip_port():
                 return ip, port
 
 
-# def run_try_connection(actual_ip, actual_port):
-#     while True:
-#         IP, PORT = try_connection(actual_ip, actual_port)
-#         print(IP, PORT)
-
-
 def console():
     IP, PORT = get_ip_port()
 
-    # t = threading.Thread(target=run_try_connection, args=(IP, PORT))
     while True:
-        # t.start()
         print("************************MENU*************************")
         print("PRESS ***********************************************")
         print("1. TO ENTER AGENT ***********************************")
@@ -83,9 +72,7 @@ def console():
             sock.connect((IP, PORT))
         except:
             IP, PORT = find_new_ip_port()
-            print(IP, PORT, "Luego de reconectar")
-            #sock.connect((IP, PORT))
-            print(sock, "?????")
+            # sock.connect((IP, PORT))
             sock.close()
             sock = None
             continue
@@ -106,7 +93,6 @@ def console():
         elif choice == "2":
             key = input("ENTER THE KEY: ")
             message = "GET_AGENT|" + str(key) + "\r\n"
-            print(sock, "!!!!!")
             send_and_close(choice, message, sock)
 
         # delete
