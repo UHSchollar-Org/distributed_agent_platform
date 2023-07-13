@@ -14,20 +14,21 @@ ip_broadcast = "192.168.1.255"
 
 # data structure that represents a distributed hash table
 class NodeAP(object):
-    def __init__(self, local_address, remote_address=None):
+    def __init__(self, local_address, remote_address, Bcast):
         self.daemons_ = {}
         self.my_ip = socket.gethostbyname(socket.gethostname())
-        self.remote_ip = self.node_broadcast()
-        self.daemons_["udp_sock_listen"] = Daemon(self, "udp_sock_listen")
-        self.daemons_["udp_sock_listen"].start()
-        print(f"Mi ip es {self.my_ip}")
-        print(f"El ip del remote q respondio BC es {self.remote_ip}")
-        if self.remote_ip == self.my_ip:
-            remote_address = None
-        else:
-            remote_address = Address(self.remote_ip, PORT_TCP + 1)
-        local_address = Address(self.my_ip, PORT_TCP)
-        print(local_address, remote_address, "!!!!!!!!!!!!!!!!!!!")
+        if Bcast:
+            self.remote_ip = self.node_broadcast()
+            print(f"Mi ip es {self.my_ip}")
+            print(f"El ip del remote q respondio BC es {self.remote_ip}")
+            if self.remote_ip == self.my_ip:
+                remote_address = None
+            else:
+                remote_address = Address(self.remote_ip, PORT_TCP + 1)
+            local_address = Address(self.my_ip, PORT_TCP)
+            print(local_address, remote_address, "!!!!!!!!!!!!!!!!!!!")
+            self.daemons_["udp_sock_listen"] = Daemon(self, "udp_sock_listen")
+            self.daemons_["udp_sock_listen"].start()
         self.local_ = Local(local_address, remote_address)
         self.address = local_address
         self.shutdown_ = False
@@ -42,7 +43,7 @@ class NodeAP(object):
 
     def run(self):
         self.socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket_.bind((self.my_ip, PORT_TCP))
+        self.socket_.bind((self.my_ip, self.address.port))
         self.socket_.listen(10)
         while 1:
             try:
@@ -149,14 +150,15 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) == 1:
-        dht = NodeAP(Address(socket.gethostbyname(socket.gethostname()), PORT_TCP))
+        dht = NodeAP(
+            Address(socket.gethostbyname(socket.gethostname()), PORT_TCP), None, True
+        )
 
-    if len(sys.argv) == 2:
-        dht = NodeAP(Address(socket.gethostbyname(socket.gethostname()), sys.argv[1]))
     elif len(sys.argv) == 4:
         dht = NodeAP(
             Address(socket.gethostbyname(socket.gethostname()), sys.argv[1]),
             Address(sys.argv[2], sys.argv[3]),
+            False,
         )
     input("Press any key to shutdown\n")
     print()

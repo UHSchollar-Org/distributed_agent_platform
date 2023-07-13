@@ -41,7 +41,10 @@ class AgentPlataform(object):
                 if params_ != None:
                     params = self._create_params(params_)
                     params = dict(params)
-                    response = requests.get(url, params)
+                    try:
+                        response = requests.get(url, params)
+                    except requests.exceptions.ConnectionError:
+                        print("Connection Error")
                 else:
                     response = requests.get(url)
                 if response.status_code == 200:
