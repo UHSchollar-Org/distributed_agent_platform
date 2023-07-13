@@ -12,7 +12,7 @@ class Calculator_api(object):
 
     @app.get("/sub/")
     async def sub(x: int, y: int):
-        return {"result": x + y}
+        return {"result": x - y}
 
     def name(self):
         return "Calculator"

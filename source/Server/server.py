@@ -41,7 +41,6 @@ class AgentPlataform(object):
                 if params_ != None:
                     params = self._create_params(params_)
                     params = dict(params)
-                    print(url, params, "??????????????????????")
                     response = requests.get(url, params)
                 else:
                     response = requests.get(url)
@@ -59,7 +58,6 @@ class AgentPlataform(object):
             return "Api doesnt match any other"
 
     def _create_params(self, args):
-        print(args, "llamando a create params")
         args_ = args[1 : len(args) - 1]
         args_ = args_.strip().split(sep=",")
         print(args_, "args_")
@@ -67,7 +65,6 @@ class AgentPlataform(object):
         for x in args_:
             tmp = x.split(sep="=")
             params_dict[tmp[0]] = tmp[1]
-        print(params_dict)
         return params_dict
 
     def asociate_id_api(self, api):

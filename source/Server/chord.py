@@ -12,6 +12,7 @@ from settings import *
 from network import *
 from utils import *
 from server import AgentPlataform
+from colorama import Fore
 
 
 def repeat_and_sleep(sleep_time):
@@ -89,6 +90,7 @@ class Local(object):
         self.temp_new_predecessor = None
         self.count = 0
         self.to_reply = []
+        self.to_reply_notif = []
 
     def create_files(self):
         if os.path.exists(self.file_name + ".json"):
@@ -189,6 +191,9 @@ class Local(object):
             succ = self.find_successor(hash(key))
             if succ.id() == self.id():
                 self.replication_set(data[0], data[1])
+        while self.to_reply_notif:
+            data = self.to_reply_notif.pop()
+            self.replication_set(data[0], data[1])
 
         print("===============================================")
         print("STABILIZING")
@@ -222,6 +227,11 @@ class Local(object):
         # - the new node r is in the range (pred(n), n)
         # OR
         # - our previous predecessor is dead
+        # if self.predecessor() and self.predecessor().id() == remote.id():
+        #     while self.to_reply_notif:
+        #         data = self.to_reply_notif.pop()
+        #         self.replication_set(data[0], data[1])
+
         if (
             self.predecessor() == None
             or inrange(remote.id(), self.predecessor().id(1), self.id())
@@ -229,21 +239,39 @@ class Local(object):
         ):
             old_predecessor = self.predecessor_
             self.predecessor_ = remote
-            # Ver que llaves no son mias
-            if old_predecessor and old_predecessor.id() != self.predecessor_.id():
-                borrowed_agents = self.get_borrowed_agents(remote, old_predecessor)
-                # Borrar replicas de esas llaves
-                if borrowed_agents:
-                    for agent in borrowed_agents:
-                        result = self.remove_key_value(agent[0])
-                        for i in range(min(REPLICATION_FACTOR, len(self.successors_))):
-                            succ = self.successors_[i]
-                            if succ.id() != self.id():
-                                res = succ.delete_old_agent_remote(agent[0])
-                            else:
-                                break
-                    # Envia las llaves al predecesor
-                    self.send_keys_to_my_new_predecessor(borrowed_agents)
+            # Entró alguien nuevo
+            if old_predecessor and old_predecessor.ping():
+                # Ver que llaves no son mias
+                if (
+                    old_predecessor.id() != self.predecessor_.id()
+                    and self.id() != remote.id()
+                ):
+                    borrowed_agents = self.get_borrowed_agents(remote, old_predecessor)
+                    # Borrar replicas de esas llaves
+                    # Entro alguien nuevo
+                    if borrowed_agents:
+                        for agent in borrowed_agents:
+                            result = self.remove_key_value(agent[0])
+                            for i in range(
+                                min(REPLICATION_FACTOR, len(self.successors_))
+                            ):
+                                succ = self.successors_[i]
+                                if succ.id() != self.id():
+                                    res = succ.delete_old_agent_remote(agent[0])
+                                else:
+                                    break
+                        # Envia las llaves al predecesor
+                        self.send_keys_to_my_new_predecessor(borrowed_agents)
+            # Se cayó mi predecesor
+            elif old_predecessor:
+                self.replic_my_keys(old_predecessor)
+
+    def replic_my_keys(self, old_pred):
+        for key in self.data_:
+            # if self.find_successor(utils.hash(key)).id() == self.id() and utils.hash(key) < old_pred.id():
+            #     self.to_reply_notif.append((key, self.data_[key]))
+            if self.is_ours(utils.hash(key)) and utils.hash(key) <= old_pred.id():
+                self.to_reply_notif.append((key, list_to_string(self.data_[key])))
 
     def get_borrowed_agents(self, remote, oldpredecessor):
         dicc = self.load_data()
@@ -251,10 +279,13 @@ class Local(object):
         # self.update_successors()
         if len(dicc) > 0:
             for key in dicc:
+                # succ = self.find_successor(utils.hash(key))
+                # print(Fore.CYAN, succ.id(), Fore.RESET)
+                id_key = utils.hash(key)
                 if (
-                    self.find_successor(hash(key)).address_ == remote.address_
-                    # inrange(hash(key), oldpredecessor.id(1), remote.id(1))
-                    and remote.address_ != self.address_
+                    # succ.id() == remote.id()
+                    inrange(id_key, oldpredecessor.id(), remote.id())
+                    and remote.id() != self.id()
                 ):
                     results.append((key, dicc[key]))
         return results
@@ -282,7 +313,6 @@ class Local(object):
     @retry_on_socket_error(UPDATE_SUCCESSORS_RET)
     def update_successors(self):
         previous_succs = self.successors_.copy()
-
         suc = self.successor()
         # if we are not alone in the ring, calculate
         if suc.id() != self.id():
@@ -301,7 +331,7 @@ class Local(object):
                 self.replication_new_succ()
                 self.iterate_previous_successors(previous_succs, successors)
         else:
-            self.successors_ = []
+            self.successors_ = [self]
         return True
 
     def iterate_previous_successors(self, previous_succs, successors):
@@ -524,7 +554,6 @@ class Local(object):
         return json.dumps(agents[:10])
 
     def _use_agent(self, api_name, endpoint, params):
-        print(api_name, endpoint, params, "-------")
         result = self.agnt_plat_server.comunicate_with_api(api_name, endpoint, params)
         return result
 

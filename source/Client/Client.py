@@ -1,17 +1,15 @@
-import threading
 import socket
 from utils import get_ip_port, ping
-import time
 
 IP, PORT = None, None
 ips_ = [
-    "172.20.10.11",
-    "172.20.10.3",
     "192.168.1.105",
     "192.168.1.106",
     "192.168.1.107",
+    "192.168.1.108",
+    "192.168.1.109",
 ]
-ports_ = [x for x in range(9000, 10001) if x % 2 == 0]
+ports_ = [x for x in range(9000, 905) if x % 2 == 0]
 
 
 def send_and_close(choice, message, socket: socket.socket):
