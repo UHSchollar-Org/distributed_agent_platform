@@ -1,15 +1,15 @@
 import socket
+from xmlrpc.client import ProtocolError
 from utils import get_ip_port, ping
 
-IP, PORT = None, None
+IP, PORT = None, 9000
 ips_ = [
-    "192.168.1.105",
-    "192.168.1.106",
+    "192.168.1.104",
+    "192.168.1.101",
     "192.168.1.107",
     "192.168.1.108",
     "192.168.1.109",
 ]
-ports_ = [x for x in range(9000, 905) if x % 2 == 0]
 
 
 def send_and_close(choice, message, socket: socket.socket):
@@ -34,10 +34,9 @@ def find_new_ip_port():
     print("RECONNECTING...")
     for ip in ips_:
         print("Iterating")
-        for port in ports_:
-            if ping(ip, port):
-                print(f"New ip {ip}, port {port}")
-                return ip, port
+        if ping(ip, PORT):
+            print(f"New ip {ip}, port {PORT}")
+            return ip, PORT
 
 
 def console():
